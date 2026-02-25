@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+pip-log.txt
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data directories
+data/
+database.toon
+*.log
+*.pid
+.pids
+
+# Build artifacts
+out/
+cache/
+lib/
+target/
+Cargo.lock
+
+# Node modules
+node_modules/
+package-lock.json
+yarn.lock
+
+# Temporary/Old files
+trash/
+benchmark_candidates/
+benchmark_candidates_solana/
+security-benchmark/
+*.tmp
+*.temp
+.cache/
+**/**.rs.bk
