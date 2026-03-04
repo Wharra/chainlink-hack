@@ -11,6 +11,7 @@ from solders.pubkey import Pubkey
 from dotenv import load_dotenv
 import utils
 import static_scan
+import exploit_runner
 
 load_dotenv()
 
@@ -436,20 +437,29 @@ def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str =
         print(f"[ERROR] AI Parsing Error: {e}")
         return 0, "Error"
 
-def append_to_db(chain, contract_name, value, timestamp, vuln_hint):
+def append_to_db(chain, contract_name, value, timestamp, vuln_hint, score=0, exploit_confirmed=False):
     """Appends a new job to the TOON database."""
+    if score >= 85:
+        status = "THREAT"
+    elif score >= 50:
+        status = "MEDIUM"
+    else:
+        status = "SAFE"
     entry = {
         "chain": chain,
         "time": int(timestamp),
         "contract": contract_name,
         "value_usd": value,
-        "status": "PENDING",
+        "status": status,
+        "score": score,
         "output_name": f"{chain}_{contract_name.replace('.sol', '').replace('.txt', '').replace('.json', '')}_{int(timestamp)}",
-        "vulnerability": vuln_hint  # <--- NEW FIELD
+        "vulnerability": vuln_hint,
+        "exploit_confirmed": exploit_confirmed,
     }
-    
+
     utils.append_to_db(entry)
-    print(f"[DB] Job added: {entry['output_name']} (Hint: {vuln_hint})")
+    confirmed_tag = " ⚡EXPLOIT CONFIRMED" if exploit_confirmed else ""
+    print(f"[DB] [{status}] {entry['output_name']} score={score} ({vuln_hint}){confirmed_tag}")
 
 # --- CONFIGURATION ---
 WAITING_ROOM_DIR = "./waiting_room"
@@ -597,29 +607,31 @@ def main():
             time.sleep(300)
             continue
 
+        # Attempt exploit confirmation on mainnet fork (only for critical threats)
+        exploit_confirmed = False
+        if score >= 85 and chain_type == "EVM":
+            parts = current_file.split("_")
+            contract_addr = parts[1].replace(".sol", "") if len(parts) >= 2 else None
+            rpc_url = utils.get_fork_rpc_url(chain_name.upper())
+            if contract_addr and rpc_url:
+                exploit_result = exploit_runner.confirm_exploit(code, vuln, contract_addr, rpc_url)
+                exploit_confirmed = exploit_result["confirmed"]
+
+        # Always add to DB so dashboard shows all scanned pools
+        append_to_db(chain_name, current_file, balance_usd, time.time(), vuln, score, exploit_confirmed)
+
         if score >= 85:
-            print("[ACTION] GOLDEN NUGGET. Adding to DB...")
-            # Send to DB with Vulnerability Hint
-            append_to_db(chain_name, current_file, balance_usd, time.time(), vuln)
-            
-            # Move to Gold
+            print("[ACTION] GOLDEN NUGGET — moving to gold/")
             try:
                 shutil.move(filepath, os.path.join(utils.GOLD_DIR, current_file))
             except FileNotFoundError:
-                # File already moved/deleted by another process
                 pass
-
             print("[WAIT] Cooling down for 60 seconds...")
             time.sleep(60)
-
         else:
-            print("[AI] Score too low.")
-            # Even if AI rejects it, if it has value, we trash it (AI decision is final for now)
-            # OR we could hold it? No, if AI says it's safe, it's safe.
             try:
                 shutil.move(filepath, os.path.join(utils.TRASH_DIR, current_file))
             except FileNotFoundError:
-                # File already moved/deleted by another process
                 pass
             time.sleep(60)
 

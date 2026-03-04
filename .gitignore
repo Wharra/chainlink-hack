@@ -16,6 +16,7 @@ pip-log.txt
 # Environment variables
 .env
 
+# IDEs
 .vscode/
 .idea/
 *.swp
@@ -26,12 +27,19 @@ pip-log.txt
 .DS_Store
 Thumbs.db
 
-# Data directories
+# Data directories (runtime generated)
 data/
 database.toon
 *.log
 *.pid
 .pids
+logs/
+gold_processed/
+candidates/
+waiting_room/
+
+# Dashboard build
+dashboard/dist/
 
 # Build artifacts
 out/
@@ -40,7 +48,7 @@ lib/
 target/
 Cargo.lock
 
-# Node modules
+# Node modules (if using TypeScript workflow)
 node_modules/
 package-lock.json
 yarn.lock

@@ -1,0 +1,19 @@
+# ChainGuard Requirements
+# Python 3.9+ required
+
+# Core Dependencies
+web3>=6.0.0              # Ethereum/EVM blockchain interaction
+python-dotenv>=1.0.0     # Environment variable management
+requests>=2.31.0         # HTTP requests (APIs, Etherscan, Gemini)
+flask>=3.0.0             # Dashboard API server
+flask-cors>=4.0.0        # Cross-origin resource sharing
+slither-analyzer>=0.10.0 # Static analysis pre-filter (optional, needs solc via solc-select)
+
+# Solana Support (optional)
+solana>=0.30.0           # Solana blockchain interaction
+solders>=0.18.0          # Solana transaction types
+anchorpy>=0.18.0         # Anchor framework integration
+
+# Optional: Scheduler GUI automation (for automated testing)
+pyautogui>=0.9.54        # GUI automation
+pyperclip>=1.8.2         # Clipboard operations
