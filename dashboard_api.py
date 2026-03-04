@@ -23,6 +23,27 @@ CORS(app)
 
 RISK_API_BASE = os.getenv("RISK_API_URL", "http://127.0.0.1:8000")
 SAFE_VULNS = {"no significant vulnerability detected", "safe", "none", "n/a", ""}
+POC_REQUESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poc_requests")
+
+
+def _write_poc_request(address: str, score: int, vulnerability: str, alchemy_key: str):
+    """Write a PoC request file so the Antigravity daemon picks it up."""
+    os.makedirs(POC_REQUESTS_DIR, exist_ok=True)
+    fork_url = f"https://eth-mainnet.g.alchemy.com/v2/{alchemy_key}"
+    content = f"""# PoC Request: {address}
+
+**Chain:** ETHEREUM
+**Score:** {score}/100
+**Vulnerability:** {vulnerability}
+**Fork URL:** {fork_url}
+
+Fetch the verified source code from Etherscan mainnet (chainid=1) and generate
+a Foundry PoC test that mathematically proves this vulnerability.
+"""
+    path = os.path.join(POC_REQUESTS_DIR, f"{address.lower()}.md")
+    with open(path, "w") as f:
+        f.write(content)
+    print(f"[poc-queue] Written {path}", flush=True)
 
 # ── Demo fixtures (Chainlink Hack demo button) ───────────────────────────────
 
@@ -238,6 +259,10 @@ def submit_onchain():
         signed   = w3.eth.account.sign_transaction(tx, private_key)
         tx_hash  = w3.eth.send_raw_transaction(signed.raw_transaction)
         hex_hash = tx_hash.hex()
+
+        # Queue PoC generation for high-risk contracts
+        if score >= 70:
+            _write_poc_request(address, score, vulnerability, alchemy_key)
 
         return jsonify({
             "tx_hash":      hex_hash,

@@ -4,7 +4,7 @@ import type { OnchainResult } from '../api'
 import type { AnalyzeResult } from '../types'
 
 const DEMO_SAFE_ADDR = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-const DEMO_VULN_ADDR = '0x4e2Bf022a5E5c91C4dc64d0D53680C8A862e81BD'
+const DEMO_VULN_ADDR = '0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413'
 
 function scoreColor(s: number) {
   if (s >= 85) return 'var(--red)'

@@ -380,7 +380,7 @@ def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str =
             
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={current_key}"
             
-            print(f"[AI] Attempt {attempt+1}/{max_retries} using Key: {masked_key}")
+            print(f"[AI] Attempt {attempt+1}/{max_retries}")
             
             response = requests.post(url, headers=headers, json=payload)
             _last_ai_call_ts = time.time()

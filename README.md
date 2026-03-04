@@ -1,6 +1,6 @@
 # ChainGuard
 
-**Real-time DeFi risk sentinel - Chainlink Hackathon 2025, Risk & Compliance Track**
+**Real-time DeFi risk sentinel — Chainlink Hackathon 2025, Risk & Compliance Track**
 
 ChainGuard monitors Uniswap V3/V4 deployments on Ethereum, identifies malicious contracts before users interact with them, and posts immutable risk reports on-chain through Chainlink CRE.
 
@@ -9,7 +9,7 @@ ChainGuard monitors Uniswap V3/V4 deployments on Ethereum, identifies malicious 
 
 Every day, hundreds of new ERC20 tokens and Uniswap V4 hooks are deployed on mainnet. A significant fraction are honeypots, rug pulls, or backdoored contracts. By the time a security researcher flags one manually, users have already lost funds.
 
-ChainGuard closes that gap - fully automated, from deployment event to on-chain risk record.
+ChainGuard closes that gap — fully automated, from deployment event to on-chain risk record.
 
 
 ## How It Works
@@ -51,6 +51,12 @@ Ethereum mainnet
     Off-chain compute workflow that orchestrates the full pipeline.
     Writes the risk report to RiskRegistry.sol on Sepolia.
     Emits RiskReported(address, score, vulnerability, timestamp).
+      │
+      ▼
+[7] Dashboard            dashboard/
+    React + Vite monitoring UI (port 5173).
+    Live Antigravity terminal via SSE. Auto-submits high-risk contracts
+    on-chain and displays the Etherscan tx in a popup.
 ```
 
 
@@ -58,9 +64,9 @@ Ethereum mainnet
 
 **Determinism + intelligence, not a choice between them.**
 
-Static analysis (Slither) is fully deterministic - the same contract always produces the same findings. That guarantees reproducibility, auditability, and a hard baseline that judges and auditors can verify.
+Static analysis (Slither) is fully deterministic — the same contract always produces the same findings. That guarantees reproducibility, auditability, and a hard baseline that judges and auditors can verify.
 
-Gemini is the opposite: it reasons, infers, and generalizes - catching novel, unnamed attack vectors that no rule-based tool has ever classified. The static findings are fed into its prompt, grounding its reasoning in concrete evidence.
+Gemini is the opposite: it reasons, infers, and generalizes — catching novel, unnamed attack vectors that no rule-based tool has ever classified. The static findings are fed into its prompt, grounding its reasoning in concrete evidence.
 
 Two layers. Neither alone is sufficient.
 
@@ -72,90 +78,95 @@ Two layers. Neither alone is sufficient.
 | Chainlink Data Feeds | [utils.py](utils.py) | ETH/USD price used for contract valuation |
 | Chainlink CRE Workflow | [cre/chainguard-risk/workflow.yaml](cre/chainguard-risk/workflow.yaml) | Orchestrates the full pipeline off-chain |
 | Chainlink CRE SDK | [cre/chainguard-risk/workflow.ts](cre/chainguard-risk/workflow.ts) | TypeScript SDK alternative |
-| RiskRegistry (Solidity) | [cre/contracts/RiskRegistry.sol](cre/contracts/RiskRegistry.sol) | On-chain immutable risk record |
+| RiskRegistry (Solidity) | [contracts/RiskRegistry.sol](contracts/RiskRegistry.sol) | On-chain immutable risk record (Sepolia: `0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821`) |
 | Risk API (CRE adapter) | [risk_api.py](risk_api.py) | HTTP bridge consumed by the CRE workflow |
 
-The CRE workflow triggers on a cron (`*/10 * * * *`) or contract deployment event, calls the Risk API, and writes the result on-chain. Any protocol can then query `RiskRegistry.reports[address]` before interacting with an unknown contract.
+The CRE workflow triggers on a cron (`*/10 * * * *`) or contract deployment event, calls the Risk API, and writes the result on-chain. Any protocol can then query `RiskRegistry.risks[address]` before interacting with an unknown contract.
 
 
 ## Quick Start
 
-**Requirements:** Python 3.9+, Node 18+, an Alchemy key, an Etherscan key, a Google AI key.
+**Requirements:** Python 3.9+, Node 18+, Foundry, an Alchemy key, an Etherscan key, a Google AI key.
 
 ```bash
 # 1. Install Python dependencies
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Configure environment
-cp .env.example .env
-# Fill in: ALCHEMY_API_KEY, ETHERSCAN_API_KEY, GOOGLE_API_KEY
+# 2. Install dashboard dependencies
+cd dashboard && npm install && cd ..
 
-# 3. Start the pipeline (three separate terminals)
-python sentry_evm.py       # watches Ethereum for new pools
-python golden_bridge.py    # scores contracts as they appear
-python risk_api.py         # serves the Chainlink CRE workflow
+# 3. Configure environment
+cp .env-example .env
+# Fill in: ALCHEMY_API_KEY, ETHERSCAN_API_KEY, GOOGLE_API_KEY, PRIVATE_KEY
+
+# 4. Start everything
+./start.sh
 ```
+
+Open **http://localhost:5173** — click **✕ Honeypot** to run a live demo scan.
 
 **Score a contract manually (Antigravity CLI):**
 
 ```bash
-python risk_score.py --address 0xYourContract --chain ETHEREUM --json
+python risk_score.py --address 0xYourContract --exploit --json
 ```
 
-```json
-{
-  "address": "0x...",
-  "chain": "ETHEREUM",
-  "score": 91,
-  "vulnerability": "Honeypot - transfer blocked for non-whitelisted addresses"
-}
-```
-
-**Run the dashboard:**
+**Generate a Foundry PoC exploit (Antigravity IDE):**
 
 ```bash
-python dashboard_api.py    # port 8001
-cd dashboard && npm install && npm run dev
+# After a scan writes a request to poc_requests/, run:
+claude --print "/generate_pocs"
+# PoC appears in poc_requests/done/
 ```
+
+
+## On-Chain Flow (Dashboard)
+
+When a contract scores ≥ 70/100:
+1. Dashboard auto-calls `/api/submit` → signs tx with your Sepolia wallet
+2. `RiskRegistry.reportRisk(address, score, vulnerability)` is written on-chain
+3. Popup shows the tx hash + Etherscan link
+4. A PoC request is queued in `poc_requests/` for Antigravity to process
 
 
 ## Deploy the On-Chain Registry
 
 ```bash
 # Deploy RiskRegistry to Sepolia
-forge create cre/contracts/RiskRegistry.sol:RiskRegistry \
-  --rpc-url $CRE_RPC_URL \
-  --private-key $PRIVATE_KEY
+python contracts/deploy.py
 
-# Run the CRE workflow
-cre workflow run cre/chainguard-risk/workflow.yaml \
-  --input target_address=0x... \
-  --env-file .env
+# Already deployed at: 0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821
+# https://sepolia.etherscan.io/address/0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821
 ```
 
 
 ## Project Structure
 
 ```
-hack_defi/
+chainlink-hack/
 ├── sentry_evm.py              # EVM event listener (V3 PoolCreated + V4 Initialize)
 ├── golden_bridge.py           # Value filter + AI scoring orchestrator
 ├── static_scan.py             # Deterministic pre-analysis (regex + Slither)
-├── risk_score.py              # Antigravity CLI - standalone Gemini scorer
+├── risk_score.py              # Antigravity CLI — standalone scorer + exploit runner
+├── exploit_runner.py          # Foundry fork-test exploit runner
 ├── risk_api.py                # HTTP API consumed by Chainlink CRE
-├── dashboard_api.py           # Dashboard bridge (port 8001)
+├── dashboard_api.py           # Dashboard bridge (port 8001) + SSE streaming
 ├── utils.py                   # Chainlink price feeds + shared helpers
-├── prompt_gemini.txt          # Hardened security prompt template
+├── start.sh / stop.sh         # Start/stop all services
+├── contracts/
+│   ├── RiskRegistry.sol       # On-chain risk registry (deployed on Sepolia)
+│   └── deploy.py              # Deployment script (forge create)
 ├── cre/
-│   ├── chainguard-risk/
-│   │   ├── workflow.yaml      # Chainlink CRE workflow definition
-│   │   └── workflow.ts        # CRE TypeScript SDK version
-│   ├── contracts/
-│   │   └── RiskRegistry.sol   # On-chain risk registry
-│   └── README.md
+│   └── chainguard-risk/
+│       ├── workflow.yaml      # Chainlink CRE workflow definition
+│       └── workflow.ts        # CRE TypeScript SDK version
 ├── dashboard/                 # React + Vite monitoring dashboard
-└── .env.example
+├── poc_requests/              # Queued exploit requests (processed by /generate_pocs)
+│   └── done/                  # Completed PoC Solidity files
+└── .agent/
+    └── workflows/
+        └── generate_pocs.md   # Antigravity IDE skill for Foundry PoC generation
 ```
 
 
@@ -174,4 +185,4 @@ ChainGuard covers a broad set of known Solidity attack patterns. Antigravity ext
 
 ## License
 
-MIT - built for defensive security research and protocol risk management.
+MIT — built for defensive security research and protocol risk management.
