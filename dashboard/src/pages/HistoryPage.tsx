@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Zap } from 'lucide-react'
 import type { Alert } from '../types'
 
 interface Props { alerts: Alert[]; loading: boolean }
@@ -59,14 +60,14 @@ export default function HistoryPage({ alerts, loading }: Props) {
       {/* Page header */}
       <div style={{ marginBottom: '28px' }}>
         <h2 className="page-title">Alert History</h2>
-        <p className="page-subtitle">All contracts flagged by ChainGuard since deployment.</p>
+        <p className="page-subtitle">Every contract ChainGuard has scanned and flagged.</p>
       </div>
 
       {/* Toolbar */}
       <div className="history-toolbar">
         <input
           type="text"
-          placeholder="Search by address…"
+          placeholder="Search by address"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="search-input"
@@ -142,7 +143,9 @@ export default function HistoryPage({ alerts, loading }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span className={`badge ${badge.cls}`}>{badge.label}</span>
                         {alert.exploit_confirmed && (
-                          <span className="badge-exploit">⚡ EXPLOIT</span>
+                          <span className="badge-exploit" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Zap size={10} /> EXPLOIT
+                          </span>
                         )}
                       </div>
                     </td>

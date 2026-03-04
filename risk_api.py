@@ -7,7 +7,7 @@ from urllib.parse import urlparse, parse_qs
 import requests
 from dotenv import load_dotenv
 
-from golden_bridge import get_balance_usd, call_gemini_flash_score
+from golden_bridge import get_balance_usd, call_antigravity_score
 import static_scan
 
 
@@ -63,7 +63,7 @@ class RiskHandler(BaseHTTPRequestHandler):
             filename = f"ETHEREUM_{address}.sol"
             value_usd = get_balance_usd(filename, "EVM")
             scan = static_scan.analyze(source)
-            score, vuln = call_gemini_flash_score(source, "ETHEREUM", value_usd, static_context=scan['prompt_context'])
+            score, vuln = call_antigravity_score(source, "ETHEREUM", value_usd, scan_result=scan)
         except Exception as e:
             return self._send_json(500, {"error": str(e)})
 

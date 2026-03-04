@@ -332,12 +332,17 @@ def get_balance_usd(filename, chain_type):
         print(f"[WARN] Balance check failed for {filename}: {e}")
         return 0
 
-def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str = ""):
+def call_antigravity_score(code, chain_name, balance_usd, scan_result=None):
     """Stage 3: AI Filter. Uses rotated API keys."""
+    static_context = scan_result['prompt_context'] if scan_result else ""
+    fallback_score = scan_result['preliminary_score'] if scan_result else 0
+    fallback_vuln = "Rate Limited (Regex Fallback)"
+    if scan_result and scan_result.get('findings'):
+        fallback_vuln = f"Regex: {scan_result['findings'][0]['name']}"
     # Rotate keys randomly to distribute load
     if not utils.GOOGLE_API_KEYS:
         print("[ERROR] No Google API Keys found!")
-        return 0, "Error"
+        return fallback_score, fallback_vuln
 
     headers = {'Content-Type': 'application/json'}
     
@@ -378,7 +383,8 @@ def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str =
             current_key = random.choice(utils.GOOGLE_API_KEYS)
             masked_key = f"{current_key[:4]}...{current_key[-4:]}"
             
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={current_key}"
+            # Using gemini-2.5-flash to avoid rate limits and 404s
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={current_key}"
             
             print(f"[AI] Attempt {attempt+1}/{max_retries}")
             
@@ -395,10 +401,10 @@ def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str =
                 print(f"[ERROR] API Error {response.status_code}: {response.text}")
                 # Don't break immediately on generic errors if we have multiple keys, strictly speaking
                 # but usually 400/403 won't proceed. Let's return error for non-429.
-                return 0, "API Error"
+                return fallback_score, fallback_vuln
         else:
-             print("[ERROR] Failed after retries (All keys/attempts exhausted).")
-             return 0, "Rate Limited"
+             print("[ERROR] Failed after retries (All keys/attempts exhausted). Using Regex Fallback.")
+             return fallback_score, fallback_vuln
             
         data = response.json()
         text = (
@@ -410,7 +416,7 @@ def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str =
         )
         if not text:
             print("[WARN] AI returned empty response.")
-            return 0, "Error: Empty Response"
+            return fallback_score, fallback_vuln
 
         # 3. PARSE TOON FORMAT (SCORE|VULNERABILITY) with fallback
         match = re.search(r"(\d{1,3})\s*\|\s*([^\n\r]+)", text)
@@ -431,11 +437,66 @@ def call_gemini_flash_score(code, chain_name, balance_usd, static_context: str =
             return score, "Unspecified vulnerability pattern"
 
         # Malformed response - return safe default without polluting logs
-        return 0, "Parse error (safe default)"
+        return fallback_score, fallback_vuln
 
     except Exception as e:
         print(f"[ERROR] AI Parsing Error: {e}")
-        return 0, "Error"
+        return fallback_score, fallback_vuln
+
+POC_REQUESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poc_requests")
+
+def _auto_flag(address: str, score: int, vulnerability: str, chain_name: str):
+    """Write poc_request file + submit risk score on-chain when score >= 70."""
+    alchemy_key  = os.getenv("ALCHEMY_API_KEY", "")
+    private_key  = os.getenv("PRIVATE_KEY", "")
+    registry     = os.getenv("RISK_REGISTRY_ADDRESS", "").strip()
+    rpc_base     = os.getenv("CRE_RPC_URL", "https://eth-sepolia.g.alchemy.com/v2/")
+    rpc_url      = rpc_base.rstrip("/") + "/" + alchemy_key
+
+    # 1. Write PoC request file
+    try:
+        os.makedirs(POC_REQUESTS_DIR, exist_ok=True)
+        fork_url = f"https://eth-mainnet.g.alchemy.com/v2/{alchemy_key}"
+        content = f"""# PoC Request: {address}
+
+**Chain:** {chain_name.upper()}
+**Score:** {score}/100
+**Vulnerability:** {vulnerability}
+**Fork URL:** {fork_url}
+
+Fetch the verified source code from Etherscan mainnet (chainid=1) and generate
+a Foundry PoC test that mathematically proves this vulnerability.
+"""
+        poc_path = os.path.join(POC_REQUESTS_DIR, f"{address.lower()}.md")
+        with open(poc_path, "w") as f:
+            f.write(content)
+        print(f"[POC] Queued {poc_path}", flush=True)
+    except Exception as e:
+        print(f"[POC] Failed to write request: {e}")
+
+    # 2. Submit on-chain to RiskRegistry on Sepolia
+    if not registry or not private_key or not alchemy_key:
+        return
+    try:
+        w3 = Web3(Web3.HTTPProvider(rpc_url))
+        if not w3.is_connected():
+            return
+        abi = [{"inputs": [{"name": "target", "type": "address"}, {"name": "score", "type": "uint256"}, {"name": "vulnerability", "type": "string"}], "name": "reportRisk", "outputs": [], "stateMutability": "nonpayable", "type": "function"}]
+        account  = w3.eth.account.from_key(private_key)
+        contract = w3.eth.contract(address=Web3.to_checksum_address(registry), abi=abi)
+        tx = contract.functions.reportRisk(
+            Web3.to_checksum_address(address), score, vulnerability
+        ).build_transaction({
+            "from": account.address,
+            "nonce": w3.eth.get_transaction_count(account.address),
+            "gas": 200_000,
+        })
+        signed  = w3.eth.account.sign_transaction(tx, private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction).hex()
+        print(f"[ONCHAIN] RiskRegistry updated: https://sepolia.etherscan.io/tx/{tx_hash}")
+    except Exception as e:
+        print(f"[ONCHAIN] Submission failed: {e}")
+
 
 def append_to_db(chain, contract_name, value, timestamp, vuln_hint, score=0, exploit_confirmed=False):
     """Appends a new job to the TOON database."""
@@ -598,14 +659,9 @@ def main():
         if scan['findings']:
             print(f"[SCAN] {len(scan['high'])} HIGH  {len(scan['medium'])} MEDIUM  {len(scan['low'])} LOW  (prelim score: {scan['preliminary_score']})")
 
-        # --- FILTER 4: AI SCORING (Antigravity / Gemini) ---
-        score, vuln = call_gemini_flash_score(code, chain_name, balance_usd, static_context=scan['prompt_context'])
+        # --- FILTER 4: AI SCORING (Antigravity Core) ---
+        score, vuln = call_antigravity_score(code, chain_name, balance_usd, scan_result=scan)
         print(f"[AI] Score: {score}/100. Vulnerability: {vuln}")
-        
-        if vuln == "Rate Limited":
-            print("[AI] Rate limited. Pause 5 minutes avant retry...")
-            time.sleep(300)
-            continue
 
         # Attempt exploit confirmation on mainnet fork (only for critical threats)
         exploit_confirmed = False
@@ -619,6 +675,13 @@ def main():
 
         # Always add to DB so dashboard shows all scanned pools
         append_to_db(chain_name, current_file, balance_usd, time.time(), vuln, score, exploit_confirmed)
+
+        # Auto-flag high-risk contracts: write on-chain + queue PoC
+        if score >= 70 and chain_type == "EVM":
+            parts = current_file.split("_")
+            contract_addr = parts[1].replace(".sol", "") if len(parts) >= 2 else None
+            if contract_addr and contract_addr.startswith("0x"):
+                _auto_flag(contract_addr, score, vuln, chain_name)
 
         if score >= 85:
             print("[ACTION] GOLDEN NUGGET — moving to gold/")

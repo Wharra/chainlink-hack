@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Check, X, AlertTriangle, Zap, Link, Download } from 'lucide-react'
 import { runAnalysis, submitOnchain } from '../api'
 import type { OnchainResult } from '../api'
 import type { AnalyzeResult } from '../types'
@@ -20,21 +21,21 @@ function scoreLabel(s: number) {
 }
 
 export default function AnalyzePanel() {
-  const [address,   setAddress]   = useState('')
-  const [loading,   setLoading]   = useState(false)
-  const [result,    setResult]    = useState<AnalyzeResult | null>(null)
-  const [error,     setError]     = useState<string | null>(null)
-  const [lines,     setLines]     = useState<string[]>([])
+  const [address, setAddress] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<AnalyzeResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [lines, setLines] = useState<string[]>([])
 
   // On-chain submission state
-  const [submitting,   setSubmitting]   = useState(false)
-  const [onchain,      setOnchain]      = useState<OnchainResult | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [onchain, setOnchain] = useState<OnchainResult | null>(null)
   const [onchainError, setOnchainError] = useState<string | null>(null)
   const [popupVisible, setPopupVisible] = useState(false)
 
   const terminalRef = useRef<HTMLPreElement>(null)
-  const cancelRef   = useRef<(() => void) | null>(null)
-  const popupTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cancelRef = useRef<(() => void) | null>(null)
+  const popupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isValid = /^0x[0-9a-fA-F]{40}$/.test(address.trim())
 
@@ -84,8 +85,8 @@ export default function AnalyzePanel() {
       addr,
       (line) => setLines(prev => [...prev, line]),
       handleResult,
-      (err)  => setError(err),
-      ()     => setLoading(false),
+      (err) => setError(err),
+      () => setLoading(false),
     )
   }
 
@@ -98,7 +99,7 @@ export default function AnalyzePanel() {
       <div className="card">
         <div className="card-header">
           <div><div className="card-title">Analyze</div></div>
-          <div className="card-subtitle">Antigravity scoring</div>
+          <div className="card-subtitle">Score any contract</div>
         </div>
 
         <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -107,11 +108,11 @@ export default function AnalyzePanel() {
           <div className="demo-box">
             <div className="demo-label">DEMO</div>
             <div className="demo-buttons">
-              <button onClick={() => handleDemo('safe')} disabled={loading} className="demo-btn demo-btn-safe">
-                ✓ Safe
+              <button onClick={() => handleDemo('safe')} disabled={loading} className="demo-btn demo-btn-safe" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                <Check size={12} strokeWidth={3} /> Safe
               </button>
-              <button onClick={() => handleDemo('vuln')} disabled={loading} className="demo-btn demo-btn-vuln">
-                ✕ Honeypot
+              <button onClick={() => handleDemo('vuln')} disabled={loading} className="demo-btn demo-btn-vuln" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                <X size={12} strokeWidth={3} /> Honeypot
               </button>
             </div>
           </div>
@@ -136,8 +137,8 @@ export default function AnalyzePanel() {
             <div className="exploit-terminal">
               <div className="exploit-terminal-header">
                 {loading
-                  ? <><div className="spinner" style={{ width: 8, height: 8, marginRight: 6 }} /><div className="exploit-terminal-dot" style={{ background: 'var(--amber)' }} />ANTIGRAVITY — SCANNING<span className="mono" style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-3)' }}>~15–30s</span></>
-                  : <><div className="exploit-terminal-dot" style={{ background: 'var(--green)' }} />ANTIGRAVITY — DONE</>
+                  ? <><div className="spinner" style={{ width: 8, height: 8, marginRight: 6 }} /><div className="exploit-terminal-dot" style={{ background: 'var(--amber)' }} />SCANNING<span className="mono" style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-3)' }}>15 to 30s</span></>
+                  : <><div className="exploit-terminal-dot" style={{ background: 'var(--green)' }} />SCAN COMPLETE</>
                 }
               </div>
               <pre className="exploit-terminal-output" ref={terminalRef}>
@@ -156,8 +157,8 @@ export default function AnalyzePanel() {
             </div>
           )}
           {onchainError && (
-            <div className="onchain-status onchain-error">
-              ⚠ Sepolia: {onchainError}
+            <div className="onchain-status onchain-error" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={12} strokeWidth={3} /> Sepolia: {onchainError}
             </div>
           )}
 
@@ -176,37 +177,35 @@ export default function AnalyzePanel() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                     <div className="result-icon" style={{ background: `${c}10`, color: c }}>
-                      {result.score >= 70 ? '⚠' : '✓'}
+                      {result.score >= 70 ? <AlertTriangle size={18} /> : <Check size={18} strokeWidth={3} />}
                     </div>
                     {result.exploit_confirmed && (
-                      <span className="badge-exploit">⚡ EXPLOITABLE</span>
+                      <span className="badge-exploit" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Zap size={10} /> EXPLOITABLE
+                      </span>
                     )}
                     {onchain && (
-                      <span className="badge-onchain" onClick={() => setPopupVisible(true)}>
-                        ⛓ ON-CHAIN
+                      <span className="badge-onchain" onClick={() => setPopupVisible(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Link size={10} /> ON-CHAIN
                       </span>
+                    )}
+                    {result.score >= 70 && (
+                      <a href="http://127.0.0.1:8001/api/report/pdf" download="Walkthrough_TheDAO.pdf" className="badge-pdf" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', background: '#3b82f615', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>
+                        <Download size={10} /> DOWNLOAD PDF
+                      </a>
                     )}
                   </div>
                 </div>
 
                 <div className="result-fields">
-                  <Row label="Vuln"    value={result.vulnerability} vc={result.score >= 70 ? c : undefined} />
-                  <Row label="Chain"   value={result.chain} />
+                  <Row label="Vuln" value={result.vulnerability} vc={result.score >= 70 ? c : undefined} />
+                  <Row label="Chain" value={result.chain} />
                   <Row label="Address" value={`${result.address.slice(0, 10)}…${result.address.slice(-8)}`} mono />
                   {result.value_usd > 0 && (
                     <Row label="Value" value={`$${result.value_usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}`} />
                   )}
                 </div>
 
-                {result.exploit_confirmed && result.exploit_output && (
-                  <div className="exploit-terminal">
-                    <div className="exploit-terminal-header">
-                      <div className="exploit-terminal-dot" />
-                      FORGE TEST — EXPLOIT CONFIRMED
-                    </div>
-                    <pre className="exploit-terminal-output">{result.exploit_output}</pre>
-                  </div>
-                )}
               </div>
             )
           })()}
@@ -238,13 +237,15 @@ function OnchainPopup({ result, onchain, onClose }: {
       <div className="popup-card" onClick={e => e.stopPropagation()}>
         <div className="popup-header">
           <div className="popup-chain-dot" />
-          <span>ONCHAIN ALERT PUBLISHED</span>
-          <button className="popup-close" onClick={onClose}>✕</button>
+          <span>ALERT RECORDED ON CHAIN</span>
+          <button className="popup-close" onClick={onClose} aria-label="Close" style={{ display: 'flex' }}>
+            <X size={14} />
+          </button>
         </div>
 
         <div className="popup-network">
           <img src="/img/chainlink.png" alt="Chainlink" style={{ width: 16, height: 16, objectFit: 'contain' }} onError={e => (e.currentTarget.style.display = 'none')} />
-          Sepolia Testnet · Chainlink CRE
+          Sepolia Testnet via Chainlink CRE
         </div>
 
         <div className="popup-fields">
@@ -255,7 +256,7 @@ function OnchainPopup({ result, onchain, onClose }: {
           <div className="popup-row">
             <span className="popup-label">Score</span>
             <span className="popup-value" style={{ color: c, fontWeight: 600 }}>
-              {result.score}/100 — {scoreLabel(result.score)}
+              {result.score}/100 {scoreLabel(result.score)}
             </span>
           </div>
           <div className="popup-row">

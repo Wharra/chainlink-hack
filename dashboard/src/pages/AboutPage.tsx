@@ -16,7 +16,7 @@ export default function AboutPage() {
       {/* ── 2. MINT SECTION (Hyperliquid style 1) ─── */}
       <section className="ab-mint">
         <div className="ab-mint-inner">
-          <p className="ab-mint-eyebrow">The flagship application</p>
+          <p className="ab-mint-eyebrow">Built for the Chainlink Hackathon</p>
           <h2 className="ab-mint-title">
             The premier <span className="ab-mint-spaced">DECENTRALISED</span><br />
             security layer
@@ -24,12 +24,12 @@ export default function AboutPage() {
           <div className="ab-mint-layout">
             <div className="ab-feat-col ab-feat-left">
               <div className="ab-feat">
-                <div className="ab-feat-title">Real-time</div>
-                <div className="ab-feat-body">Every new Uniswap pool scanned within seconds of creation on Ethereum mainnet.</div>
+                <div className="ab-feat-title">Real time</div>
+                <div className="ab-feat-body">Every new Uniswap pool gets scanned within seconds of going live on Ethereum mainnet.</div>
               </div>
               <div className="ab-feat">
-                <div className="ab-feat-title">AI-powered</div>
-                <div className="ab-feat-body">Gemini AI reasons over contract source to catch novel attack vectors.</div>
+                <div className="ab-feat-title">AI powered</div>
+                <div className="ab-feat-body">Gemini reads the full contract source and catches attack patterns that static tools miss.</div>
               </div>
             </div>
 
@@ -41,12 +41,12 @@ export default function AboutPage() {
 
             <div className="ab-feat-col ab-feat-right">
               <div className="ab-feat">
-                <div className="ab-feat-title">On-chain</div>
-                <div className="ab-feat-body">Risk verdicts published immutably via Chainlink CRE to RiskRegistry.sol.</div>
+                <div className="ab-feat-title">On chain</div>
+                <div className="ab-feat-body">Every risk verdict gets recorded on Sepolia through Chainlink and stays there forever.</div>
               </div>
               <div className="ab-feat">
                 <div className="ab-feat-title">Proven</div>
-                <div className="ab-feat-body">Foundry PoC confirms every high-risk vulnerability is exploitable, not theoretical.</div>
+                <div className="ab-feat-body">We write a real Foundry exploit and run it against a mainnet fork to confirm the vulnerability is not theoretical.</div>
               </div>
             </div>
           </div>
@@ -61,8 +61,8 @@ export default function AboutPage() {
         <div className="ab-dark-overlay" />
         <div className="ab-dark-inner">
           <p className="ab-dark-note-top">
-            Pool scanning and exploit confirmation are two flagship features built on ChainGuard.<br />
-            But they are just the tip of the iceberg.
+            Pool scanning and exploit confirmation are two of the things ChainGuard does.<br />
+            But there is more under the hood.
           </p>
           <h2 className="ab-dark-title">
             The Chain<em>Guard</em> Stack
@@ -83,7 +83,7 @@ export default function AboutPage() {
       <section className="ab-pipeline">
         <div className="ab-pipeline-inner">
           <p className="ab-pipe-eyebrow">How it works</p>
-          <h2 className="ab-pipe-title">7 stages. <span className="ab-pipe-thin">Fully automated.</span></h2>
+          <h2 className="ab-pipe-title">7 stages. <span className="ab-pipe-thin">Zero manual steps.</span></h2>
           <div className="ab-pipe-steps">
             {STEPS.map((step, i) => (
               <div key={step.name} className="ab-pipe-step">
@@ -103,7 +103,7 @@ export default function AboutPage() {
 
       <div className="ab-footer-cta">
         <div className="ab-footer-text">ChainGuard · Chainlink Hackathon 2026</div>
-        <div className="ab-footer-sub">Risk & Compliance Track · Built with Chainlink CRE</div>
+        <div className="ab-footer-sub">Risk & Compliance Track · Chainlink CRE</div>
       </div>
 
     </div>
@@ -113,22 +113,22 @@ export default function AboutPage() {
 /* ─── Data ─────────────────────────────────────────── */
 
 const STACK = [
-  { name: 'EVM Sentry',      icon: 'EVS', desc: 'Listens for new pool events on Ethereum mainnet' },
-  { name: 'Golden Bridge',   icon: 'GB',  desc: 'Source download + value filter via Chainlink feeds' },
-  { name: 'Static Scan',     icon: 'SS',  desc: 'Deterministic pattern detection with Slither + regex' },
-  { name: 'Antigravity',     icon: 'AG',  desc: 'CLI agent: static scan → Gemini Flash scoring → Foundry PoC auto-gen on mainnet fork' },
-  { name: 'Exploit Runner',  icon: 'XR',  desc: 'Foundry PoC auto-gen + mainnet fork validation' },
-  { name: 'Chainlink CRE',   icon: 'CRE', desc: 'Publishes immutable alerts to RiskRegistry.sol' },
-  { name: 'Risk API',        icon: 'API', desc: 'HTTP server exposing the full pipeline' },
-  { name: 'Dashboard',       icon: 'UI',  desc: 'Real-time monitoring — React + TypeScript' },
+  { name: 'EVM Sentry',      icon: 'EVS', desc: 'Watches Ethereum for new Uniswap pools as they get created' },
+  { name: 'Golden Bridge',   icon: 'GB',  desc: 'Fetches contract source from Etherscan and checks pool value via Chainlink price feeds' },
+  { name: 'Static Scan',     icon: 'SS',  desc: 'Scans Solidity code for known attack patterns using regex and Slither' },
+  { name: 'Antigravity',     icon: 'AG',  desc: 'Static findings and full source go to Gemini Flash which scores the contract and names the vulnerability' },
+  { name: 'Exploit Runner',  icon: 'XR',  desc: 'Generates a Foundry exploit and tests it against a real mainnet fork' },
+  { name: 'Chainlink CRE',   icon: 'CRE', desc: 'Writes the risk report on chain to RiskRegistry.sol on Sepolia' },
+  { name: 'Risk API',        icon: 'API', desc: 'HTTP server that the CRE workflow and this dashboard use to score contracts' },
+  { name: 'Dashboard',       icon: 'UI',  desc: 'Live monitoring interface built with React and TypeScript' },
 ]
 
 const STEPS = [
-  { name: 'EVM Sentry',      desc: 'Listens for PoolCreated (V3) and Initialize (V4) events on Ethereum mainnet via Alchemy WebSocket. Extracts the token contract address from each new pool.' },
-  { name: 'Golden Bridge',   desc: 'Downloads verified source code from Etherscan. Filters by minimum value using Chainlink ETH/USD price feed, then routes contracts to the scoring engine.' },
-  { name: 'Static Scan',     desc: 'Regex + optional Slither: detects selfdestruct, uncapped mint, blacklist traps, mutable tax, delegatecall, time-bombs. Runs in <10ms.' },
-  { name: 'Antigravity',     desc: 'Core AI engine. Static findings + full source → Gemini Flash → risk score 0–100 + vulnerability label. Catches known AND unknown patterns.' },
-  { name: 'Exploit Runner',  desc: 'For high-risk contracts (score ≥ 70): Gemini generates a Foundry PoC → forge test on mainnet fork → confirmed or false-positive.' },
-  { name: 'Risk API',        desc: 'HTTP server exposing the full pipeline as a /score endpoint — consumed by the Chainlink CRE workflow and this dashboard.' },
-  { name: 'Chainlink CRE',   desc: 'TypeScript workflow on the Chainlink Compute Runtime. Calls Risk API → if score ≥ 70, publishes an immutable alert to RiskRegistry.sol on Sepolia.' },
+  { name: 'EVM Sentry',      desc: 'Watches for PoolCreated and Initialize events on Ethereum mainnet through Alchemy WebSocket. When a new pool appears it extracts the token address and sends it downstream.' },
+  { name: 'Golden Bridge',   desc: 'Downloads the verified source from Etherscan and checks the pool value using the Chainlink ETH/USD price feed. Low value contracts get skipped.' },
+  { name: 'Static Scan',     desc: 'Runs 16 regex patterns over the Solidity source looking for selfdestruct, uncapped mints, blacklist traps, hidden taxes and more. Takes under 10ms.' },
+  { name: 'Antigravity',     desc: 'The static findings and full source code go to Gemini Flash. It reasons over the code and returns a risk score from 0 to 100 with a vulnerability label. Catches both known patterns and novel ones no rule would find.' },
+  { name: 'Exploit Runner',  desc: 'When a contract scores 70 or above a Foundry exploit gets written and tested against a mainnet fork. If the test passes the vulnerability is confirmed.' },
+  { name: 'Risk API',        desc: 'HTTP server with a /score endpoint. The Chainlink CRE workflow calls it automatically, and this dashboard uses it for manual scans.' },
+  { name: 'Chainlink CRE',   desc: 'A TypeScript workflow running on the Chainlink Compute Runtime. When a contract scores 70 or above it records the finding in RiskRegistry.sol on Sepolia where it stays permanently.' },
 ]

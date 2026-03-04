@@ -114,9 +114,9 @@ python risk_score.py --address 0xYourContract --exploit --json
 
 **Generate a Foundry PoC exploit (Antigravity IDE):**
 
-```bash
-# After a scan writes a request to poc_requests/, run:
-claude --print "/generate_pocs"
+```
+# Open the project in Antigravity, then type:
+/generate_pocs
 # PoC appears in poc_requests/done/
 ```
 
@@ -128,6 +128,19 @@ When a contract scores ≥ 70/100:
 2. `RiskRegistry.reportRisk(address, score, vulnerability)` is written on-chain
 3. Popup shows the tx hash + Etherscan link
 4. A PoC request is queued in `poc_requests/` for Antigravity to process
+
+## PoC Generation (Antigravity IDE)
+
+After a scan queues a request in `poc_requests/`, open the project in Antigravity and run `/generate_pocs`. The agent:
+1. Reads the exploit request (address, vulnerability, fork URL)
+2. Fetches the verified source from Etherscan
+3. Writes `Exploit.t.sol` and runs `forge test --fork-url`
+4. Iterates until the test passes
+5. Moves the request to `poc_requests/done/`
+
+In production, requests are created automatically when the EVM Sentry flags a new Uniswap V3/V4 pool with score ≥ 70. The PoC is generated against the real deployed contract via mainnet fork.
+
+**Example (test run):** The DAO reentrancy — 10× recursive drain, 54.18 gwei extracted, 3/3 assertions passed.
 
 
 ## Deploy the On-Chain Registry

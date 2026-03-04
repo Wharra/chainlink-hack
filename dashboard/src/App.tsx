@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Sun, Moon, ShieldCheck } from 'lucide-react'
 import { fetchAlerts, fetchStats, fetchStatus } from './api'
 import type { Alert, Stats, PipelineStatus as PipelineStatusData } from './types'
 import StatsBar from './components/StatsBar'
@@ -31,8 +32,8 @@ function ChainlinkSVG() {
 function EtherscanSVG() {
   return (
     <svg viewBox="0 0 293.775 293.671" className="ticker-logo" fill="none">
-      <path d="M61.01 133.4a15.1 15.1 0 0 1 15.07-15.09l24.88.08a15.1 15.1 0 0 1 15.1 15.1v80.4c2.83-.79 6.46-1.63 10.38-2.5a12.58 12.58 0 0 0 9.74-12.28V97.5a15.1 15.1 0 0 1 15.1-15.1h24.9a15.1 15.1 0 0 1 15.1 15.1v96.16s6.26-2.53 12.37-5.11a12.6 12.6 0 0 0 7.74-11.6V61.44a15.1 15.1 0 0 1 15.1-15.1h24.9a15.1 15.1 0 0 1 15.1 15.1v107.37c21.4-15.51 43.07-34.2 60.26-56.74a24.15 24.15 0 0 1 3.76-28.62 144.08 144.08 0 0 0-245.55 37.98 18.9 18.9 0 0 1 16.05-8.03Z" fill="#21325b"/>
-      <path d="M146.89 245.3a144 144 0 0 0 140.63-113.14c-21.33 28.09-53.77 52.1-86.35 69.91a24.13 24.13 0 0 1-25.93-2 23.68 23.68 0 0 1-9.67-19.03v-11.79c-5.36 1.38-10.88 2.88-16.68 4.58a18.85 18.85 0 0 1-5.38.79 19.06 19.06 0 0 1-18.94-18.13v-26.3c-5.45.94-11 1.93-15.35 3.07a18.9 18.9 0 0 1-23.26-18.4V99.6A144.06 144.06 0 0 0 2.85 146.84c0 54.47 30.37 102.05 75.14 127.32 30.07-14.43 55.44-28.86 68.9-28.86Z" fill="#979695"/>
+      <path d="M61.01 133.4a15.1 15.1 0 0 1 15.07-15.09l24.88.08a15.1 15.1 0 0 1 15.1 15.1v80.4c2.83-.79 6.46-1.63 10.38-2.5a12.58 12.58 0 0 0 9.74-12.28V97.5a15.1 15.1 0 0 1 15.1-15.1h24.9a15.1 15.1 0 0 1 15.1 15.1v96.16s6.26-2.53 12.37-5.11a12.6 12.6 0 0 0 7.74-11.6V61.44a15.1 15.1 0 0 1 15.1-15.1h24.9a15.1 15.1 0 0 1 15.1 15.1v107.37c21.4-15.51 43.07-34.2 60.26-56.74a24.15 24.15 0 0 1 3.76-28.62 144.08 144.08 0 0 0-245.55 37.98 18.9 18.9 0 0 1 16.05-8.03Z" fill="#21325b" />
+      <path d="M146.89 245.3a144 144 0 0 0 140.63-113.14c-21.33 28.09-53.77 52.1-86.35 69.91a24.13 24.13 0 0 1-25.93-2 23.68 23.68 0 0 1-9.67-19.03v-11.79c-5.36 1.38-10.88 2.88-16.68 4.58a18.85 18.85 0 0 1-5.38.79 19.06 19.06 0 0 1-18.94-18.13v-26.3c-5.45.94-11 1.93-15.35 3.07a18.9 18.9 0 0 1-23.26-18.4V99.6A144.06 144.06 0 0 0 2.85 146.84c0 54.47 30.37 102.05 75.14 127.32 30.07-14.43 55.44-28.86 68.9-28.86Z" fill="#979695" />
     </svg>
   )
 }
@@ -186,11 +187,11 @@ export default function App() {
           </div>
           {page !== 'about' && (
             <button onClick={toggleTheme} className="theme-toggle" title="Toggle theme">
-              {theme === 'dark' ? '☀' : '☾'}
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             </button>
           )}
           <a href="https://chain.link/hackathon" target="_blank" rel="noreferrer" className="chainlink-badge">
-            ◆ Chainlink
+            <ShieldCheck size={12} strokeWidth={2.5} /> Chainlink
           </a>
         </div>
       </header>
@@ -203,12 +204,12 @@ export default function App() {
             <ShieldHero />
             <div style={{ position: 'relative', zIndex: 2 }}>
               <div className="page-title">Overview</div>
-              <div className="page-subtitle">Real-time DeFi threat monitoring · Uniswap V3 + V4</div>
+              <div className="page-subtitle">Watching Uniswap V3 and V4 pools on Ethereum mainnet</div>
             </div>
           </div>
-          <div className="dashboard-content">
+          <div className="dashboard-content animate-slide-up stagger">
             <StatsBar stats={stats} />
-            <div className="dashboard-grid">
+            <div className="dashboard-grid stagger">
               <AlertsTable alerts={alerts} loading={alertsLoading} />
               <div className="dashboard-sidebar">
                 <PipelineStatus status={status} />

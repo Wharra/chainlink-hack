@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import requests
-from flask import Flask, Response, jsonify, send_from_directory, stream_with_context
+from flask import Flask, Response, jsonify, send_from_directory, stream_with_context, send_file
 from flask import request as flask_request
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -118,6 +118,14 @@ def demo():
     t = flask_request.args.get("type", "safe")
     return jsonify(_DEMO_VULN if t == "vuln" else _DEMO_SAFE)
 
+@app.route("/api/report/pdf")
+def download_pdf():
+    """Download the generated Walkthrough PDF report"""
+    pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Walkthrough_TheDAO.pdf")
+    if os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True, download_name="Walkthrough_TheDAO.pdf")
+    return jsonify({"error": "PDF not found"}), 404
+
 
 @app.route("/api/alerts")
 def get_alerts():
@@ -215,8 +223,7 @@ def submit_onchain():
     registry = os.getenv("RISK_REGISTRY_ADDRESS", "").strip()
     private_key = os.getenv("PRIVATE_KEY", "").strip()
     alchemy_key = os.getenv("ALCHEMY_API_KEY", "").strip()
-    rpc_base    = os.getenv("CRE_RPC_URL", "https://eth-sepolia.g.alchemy.com/v2/")
-    rpc_url     = rpc_base.rstrip("/") + "/" + alchemy_key
+    rpc_url     = os.getenv("CRE_RPC_URL", f"https://eth-sepolia.g.alchemy.com/v2/{alchemy_key}").strip()
 
     if not registry or registry == "0x" + "0" * 40:
         return jsonify({"error": "RISK_REGISTRY_ADDRESS not configured in .env"}), 503
@@ -246,17 +253,23 @@ def submit_onchain():
         account  = w3.eth.account.from_key(private_key)
         contract = w3.eth.contract(address=Web3.to_checksum_address(registry), abi=abi)
 
-        tx = contract.functions.reportRisk(
+        raw_tx = contract.functions.reportRisk(
             Web3.to_checksum_address(address),
             score,
             vulnerability,
         ).build_transaction({
             "from":  account.address,
             "nonce": w3.eth.get_transaction_count(account.address),
-            "gas":   200_000,
         })
-
-        signed   = w3.eth.account.sign_transaction(tx, private_key)
+        
+        # Estimate gas properly to avoid Out of Gas with long vulnerability strings
+        try:
+            est_gas = w3.eth.estimate_gas(raw_tx)
+            raw_tx["gas"] = int(est_gas * 1.2)  # add 20% buffer
+        except Exception:
+            raw_tx["gas"] = 500_000  # Fallback
+            
+        signed   = w3.eth.account.sign_transaction(raw_tx, private_key)
         tx_hash  = w3.eth.send_raw_transaction(signed.raw_transaction)
         hex_hash = tx_hash.hex()
 

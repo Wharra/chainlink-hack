@@ -27,16 +27,25 @@ export default function StatsBar({ stats }: Props) {
   ]
 
   return (
-    <div className="stats-grid">
+    <div className="stats-grid animate-scale-in">
       {cards.map((card) => (
         <div key={card.label} className="stat-card">
-          <div
-            className="stat-value"
-            style={{ color: card.value ? card.color : 'var(--text-3)' }}
-          >
-            {card.value ?? (card.empty ?? '—')}
-          </div>
-          <div className="stat-label">{card.label}</div>
+          {stats === null ? (
+            <>
+              <div className="skeleton skeleton-value" style={{ marginBottom: '8px' }} />
+              <div className="skeleton skeleton-text" style={{ width: '60%' }} />
+            </>
+          ) : (
+            <>
+              <div
+                className="stat-value"
+                style={{ color: card.value ? card.color : 'var(--text-3)' }}
+              >
+                {card.value ?? (card.empty ?? '—')}
+              </div>
+              <div className="stat-label">{card.label}</div>
+            </>
+          )}
         </div>
       ))}
     </div>

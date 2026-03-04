@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Zap } from 'lucide-react'
 import type { Alert } from '../types'
 
 interface Props { alerts: Alert[]; loading: boolean }
@@ -75,10 +76,10 @@ export default function AlertsTable({ alerts, loading }: Props) {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`filter-btn ${filter === f
-                    ? f === 'threat' ? 'active-threat'
-                      : f === 'safe' ? 'active-safe'
-                        : 'active'
-                    : ''
+                  ? f === 'threat' ? 'active-threat'
+                    : f === 'safe' ? 'active-safe'
+                      : 'active'
+                  : ''
                   }`}
               >
                 {f}
@@ -92,12 +93,23 @@ export default function AlertsTable({ alerts, loading }: Props) {
         </div>
       </div>
 
-      {/* Table */}
       <div className="table-wrap">
-        {filtered.length === 0 ? (
+        {loading && alerts.length === 0 ? (
+          <div style={{ padding: '24px' }} className="stagger">
+            {Array(5).fill(0).map((_, i) => (
+              <div key={i} style={{ display: 'flex', gap: '16px', marginBottom: '16px' }} className="animate-slide-up">
+                <div className="skeleton skeleton-text" style={{ width: '10%' }} />
+                <div className="skeleton skeleton-text" style={{ width: '25%' }} />
+                <div className="skeleton skeleton-text" style={{ width: '10%' }} />
+                <div className="skeleton skeleton-text" style={{ width: '20%' }} />
+                <div className="skeleton skeleton-text" style={{ width: '15%' }} />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="table-empty">
-            {alerts.length === 0 ? 'No pools detected yet' : 'No results for this filter'}
-            <div className="table-empty-sub">Monitoring Uniswap V3 + V4 pools</div>
+            {alerts.length === 0 ? 'Waiting for new pools' : 'Nothing matches this filter'}
+            <div className="table-empty-sub">Monitoring Uniswap V3 and V4 on Ethereum mainnet</div>
           </div>
         ) : (
           <table className="table">
@@ -145,7 +157,9 @@ export default function AlertsTable({ alerts, loading }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span className={`badge ${badge.cls}`}>{badge.label}</span>
                         {alert.exploit_confirmed && (
-                          <span className="badge-exploit">⚡ EXPLOIT</span>
+                          <span className="badge-exploit" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                            <Zap size={10} style={{ marginRight: '4px' }} /> EXPLOIT
+                          </span>
                         )}
                       </div>
                     </td>

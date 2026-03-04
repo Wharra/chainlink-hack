@@ -79,8 +79,8 @@ PATTERNS = [
      'MEDIUM', 'inline-assembly',
      'Inline assembly reduces auditability and may hide malicious logic'),
 
-    (r'\.call\s*\{[^}]*value\s*:',
-     'MEDIUM', 'low-level-call',
+    (r'\.call\s*\{[^}]*value\s*:|\.call\.value\s*\(',
+     'HIGH', 'low-level-call',
      'Low-level .call with value — potential reentrancy if state not updated first'),
 
     # ── Upgrade / proxy patterns ──────────────────────────────────────────────
@@ -168,8 +168,11 @@ def analyze(source_code: str, filepath: str = None) -> Dict:
 
     print(f"[SCAN] Regex: {len(regex_findings)} | High: {len(high)} Medium: {len(medium)} Low: {len(low)}")
 
-    # Preliminary score — caps at 60 so Gemini always has headroom
-    prelim = min(len(high) * 20 + len(medium) * 8 + len(low) * 2, 60)
+    # Preliminary score — if high > 0 we give it 85 to trigger exploit generation on fallback
+    if len(high) > 0:
+        prelim = min(85 + len(high)*5, 100)
+    else:
+        prelim = min(len(medium) * 15 + len(low) * 5, 60)
 
     return {
         'findings': findings,
