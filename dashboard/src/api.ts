@@ -59,6 +59,27 @@ export function runAnalysis(
   return () => es.close()
 }
 
+export interface OnchainResult {
+  tx_hash: string
+  etherscan_url: string
+  registry: string
+}
+
+export async function submitOnchain(
+  address: string,
+  score: number,
+  vulnerability: string,
+): Promise<OnchainResult> {
+  const r = await fetch(`${BASE}/submit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address, score, vulnerability }),
+  })
+  const data = await r.json()
+  if (!r.ok) throw new Error(data.error || 'On-chain submission failed')
+  return data
+}
+
 export async function analyzeAddress(address: string): Promise<AnalyzeResult> {
   const r = await fetch(`${BASE}/analyze`, {
     method: 'POST',

@@ -3,11 +3,13 @@
 ChainGuard Dashboard API — Flask bridge between React dashboard and backend.
 Port 8001. Reads database.toon directly. Proxies /api/analyze to risk_api.py:8000.
 """
+import json
 import os
 import subprocess
+import sys
 
 import requests
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, Response, jsonify, send_from_directory, stream_with_context
 from flask import request as flask_request
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -176,6 +178,120 @@ def analyze():
         return jsonify({"error": "risk_api_offline — run: python risk_api.py"}), 503
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/submit", methods=["POST"])
+def submit_onchain():
+    """Write risk score to RiskRegistry on Sepolia via web3."""
+    body = flask_request.get_json(silent=True) or {}
+    address     = body.get("address", "").strip()
+    score       = int(body.get("score", 0))
+    vulnerability = body.get("vulnerability", "")
+
+    if not address.startswith("0x") or len(address) != 42:
+        return jsonify({"error": "invalid_address"}), 400
+
+    registry = os.getenv("RISK_REGISTRY_ADDRESS", "").strip()
+    private_key = os.getenv("PRIVATE_KEY", "").strip()
+    alchemy_key = os.getenv("ALCHEMY_API_KEY", "").strip()
+    rpc_base    = os.getenv("CRE_RPC_URL", "https://eth-sepolia.g.alchemy.com/v2/")
+    rpc_url     = rpc_base.rstrip("/") + "/" + alchemy_key
+
+    if not registry or registry == "0x" + "0" * 40:
+        return jsonify({"error": "RISK_REGISTRY_ADDRESS not configured in .env"}), 503
+    if not private_key:
+        return jsonify({"error": "PRIVATE_KEY not configured in .env"}), 503
+    if not alchemy_key:
+        return jsonify({"error": "ALCHEMY_API_KEY not configured in .env"}), 503
+
+    try:
+        from web3 import Web3
+        w3 = Web3(Web3.HTTPProvider(rpc_url))
+        if not w3.is_connected():
+            return jsonify({"error": "Cannot connect to Sepolia RPC"}), 503
+
+        abi = [{
+            "inputs": [
+                {"name": "target",        "type": "address"},
+                {"name": "score",         "type": "uint256"},
+                {"name": "vulnerability", "type": "string"},
+            ],
+            "name": "reportRisk",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function",
+        }]
+
+        account  = w3.eth.account.from_key(private_key)
+        contract = w3.eth.contract(address=Web3.to_checksum_address(registry), abi=abi)
+
+        tx = contract.functions.reportRisk(
+            Web3.to_checksum_address(address),
+            score,
+            vulnerability,
+        ).build_transaction({
+            "from":  account.address,
+            "nonce": w3.eth.get_transaction_count(account.address),
+            "gas":   200_000,
+        })
+
+        signed   = w3.eth.account.sign_transaction(tx, private_key)
+        tx_hash  = w3.eth.send_raw_transaction(signed.raw_transaction)
+        hex_hash = tx_hash.hex()
+
+        return jsonify({
+            "tx_hash":      hex_hash,
+            "etherscan_url": f"https://sepolia.etherscan.io/tx/{hex_hash}",
+            "registry":     registry,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/run")
+def run_scan():
+    """SSE endpoint — streams live Antigravity output then emits the JSON result."""
+    address = flask_request.args.get("address", "").strip()
+    if not address.startswith("0x") or len(address) != 42:
+        return jsonify({"error": "invalid_address"}), 400
+
+    def generate():
+        env = {**os.environ, "PYTHONUNBUFFERED": "1"}
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "risk_score.py")
+        cmd = [sys.executable, script, "--address", address, "--exploit", "--json"]
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                env=env,
+            )
+            for raw_line in proc.stdout:
+                line = raw_line.rstrip("\n")
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                # Detect final JSON result line
+                if stripped.startswith("{") and stripped.endswith("}"):
+                    try:
+                        json.loads(stripped)
+                        yield f"event: result\ndata: {stripped}\n\n"
+                        continue
+                    except Exception:
+                        pass
+                yield f"event: line\ndata: {json.dumps(stripped)}\n\n"
+            proc.wait()
+        except Exception as e:
+            yield f"event: scan_error\ndata: {json.dumps(str(e))}\n\n"
+        yield "event: done\ndata: \n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 if __name__ == "__main__":
