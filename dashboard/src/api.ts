@@ -20,10 +20,43 @@ export async function fetchStatus(): Promise<PipelineStatus> {
   return r.json()
 }
 
-export async function fetchDemo(type: 'safe' | 'vuln'): Promise<AnalyzeResult> {
-  const r = await fetch(`${BASE}/demo?type=${type}`)
-  if (!r.ok) throw new Error('Demo fetch failed')
-  return r.json()
+/**
+ * Streams live Antigravity output via SSE.
+ * Returns a cancel function to stop the stream.
+ */
+export function runAnalysis(
+  address: string,
+  onLine: (line: string) => void,
+  onResult: (result: AnalyzeResult) => void,
+  onError: (error: string) => void,
+  onDone: () => void,
+): () => void {
+  const es = new EventSource(`${BASE}/run?address=${encodeURIComponent(address)}`)
+
+  es.addEventListener('line', (e) => {
+    onLine(JSON.parse((e as MessageEvent).data))
+  })
+
+  es.addEventListener('result', (e) => {
+    onResult(JSON.parse((e as MessageEvent).data))
+  })
+
+  es.addEventListener('scan_error', (e) => {
+    onError(JSON.parse((e as MessageEvent).data))
+  })
+
+  es.addEventListener('done', () => {
+    es.close()
+    onDone()
+  })
+
+  es.onerror = () => {
+    onError('Connection lost — is the dashboard API running?')
+    es.close()
+    onDone()
+  }
+
+  return () => es.close()
 }
 
 export async function analyzeAddress(address: string): Promise<AnalyzeResult> {

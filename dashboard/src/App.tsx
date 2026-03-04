@@ -12,13 +12,11 @@ type Page = 'dashboard' | 'history' | 'about'
 
 /* ─── Ticker with real logos + fallback SVGs ──────── */
 const TICKER_ITEMS = [
-  //{ src: '/img/logo-chainguard.png', label: 'ChainGuard' },
   { src: null, label: 'Chainlink', svg: 'chainlink' },
   { src: '/img/uniswap.png', label: '' },
   { src: '/img/eth.png', label: '' },
-  //{ src: null, label: 'Gemini AI', svg: 'gemini' },
   { src: '/img/alchemy.png', label: '' },
-  { src: '/img/etherscan.svg', label: '' },
+  { src: null, label: 'Etherscan', svg: 'etherscan' },
   { src: '/img/antigravity.png', label: '' },
 ]
 
@@ -30,12 +28,11 @@ function ChainlinkSVG() {
   )
 }
 
-function GeminiSVG() {
+function EtherscanSVG() {
   return (
-    <svg viewBox="0 0 24 24" className="ticker-logo">
-      <defs><linearGradient id="gm" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#4285F4" /><stop offset="100%" stopColor="#34A853" /></linearGradient></defs>
-      <circle cx="12" cy="12" r="10" fill="url(#gm)" />
-      <path d="M12 6l2.5 4.3H9.5L12 6zm-4 5h8l-4 7L8 11z" fill="#fff" opacity="0.9" />
+    <svg viewBox="0 0 293.775 293.671" className="ticker-logo" fill="none">
+      <path d="M61.01 133.4a15.1 15.1 0 0 1 15.07-15.09l24.88.08a15.1 15.1 0 0 1 15.1 15.1v80.4c2.83-.79 6.46-1.63 10.38-2.5a12.58 12.58 0 0 0 9.74-12.28V97.5a15.1 15.1 0 0 1 15.1-15.1h24.9a15.1 15.1 0 0 1 15.1 15.1v96.16s6.26-2.53 12.37-5.11a12.6 12.6 0 0 0 7.74-11.6V61.44a15.1 15.1 0 0 1 15.1-15.1h24.9a15.1 15.1 0 0 1 15.1 15.1v107.37c21.4-15.51 43.07-34.2 60.26-56.74a24.15 24.15 0 0 1 3.76-28.62 144.08 144.08 0 0 0-245.55 37.98 18.9 18.9 0 0 1 16.05-8.03Z" fill="#21325b"/>
+      <path d="M146.89 245.3a144 144 0 0 0 140.63-113.14c-21.33 28.09-53.77 52.1-86.35 69.91a24.13 24.13 0 0 1-25.93-2 23.68 23.68 0 0 1-9.67-19.03v-11.79c-5.36 1.38-10.88 2.88-16.68 4.58a18.85 18.85 0 0 1-5.38.79 19.06 19.06 0 0 1-18.94-18.13v-26.3c-5.45.94-11 1.93-15.35 3.07a18.9 18.9 0 0 1-23.26-18.4V99.6A144.06 144.06 0 0 0 2.85 146.84c0 54.47 30.37 102.05 75.14 127.32 30.07-14.43 55.44-28.86 68.9-28.86Z" fill="#979695"/>
     </svg>
   )
 }
@@ -54,7 +51,7 @@ function Ticker() {
             ) : item.svg === 'chainlink' ? (
               <ChainlinkSVG />
             ) : (
-              <GeminiSVG />
+              <EtherscanSVG />
             )}
             <span className="ticker-label">{item.label}</span>
           </div>
@@ -113,11 +110,7 @@ function ShieldHero() {
       <div className="shield-wave shield-wave-2" />
       <div className="shield-wave shield-wave-3" />
       <div className="shield-glow" />
-      <svg className="shield-icon" viewBox="0 0 64 64" fill="none">
-        <path d="M32 4L56 14V36C56 48 44 58 32 62C20 58 8 48 8 36V14L32 4Z" fill="#2962ff" opacity="0.9" />
-        <path d="M32 10L50 18V36C50 46 41 54 32 57C23 54 14 46 14 36V18L32 10Z" fill="var(--bg)" />
-        <path d="M26 33L30 37L40 27" stroke="#26a69a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <img src="/img/logo-chainguard.png" className="shield-icon" alt="ChainGuard" />
     </div>
   )
 }
