@@ -48,7 +48,12 @@ function Ticker() {
         {items.map((item, i) => (
           <div key={i} className="ticker-item">
             {item.src ? (
-              <img src={item.src} alt={item.label} className="ticker-logo" />
+              <img
+                src={item.src}
+                alt={item.label}
+                className="ticker-logo"
+                style={item.src.includes('alchemy') || item.src.includes('antigravity') ? { height: '24px' } : {}}
+              />
             ) : item.svg === 'chainlink' ? (
               <ChainlinkSVG />
             ) : (
@@ -185,11 +190,9 @@ export default function App() {
             <div className="live-dot-circle" />
             <span className="live-dot-label">Live</span>
           </div>
-          {page !== 'about' && (
-            <button onClick={toggleTheme} className="theme-toggle" title="Toggle theme">
-              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-          )}
+          <button onClick={toggleTheme} className="theme-toggle" title="Toggle theme">
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
           <a href="https://chain.link/hackathon" target="_blank" rel="noreferrer" className="chainlink-badge">
             <ShieldCheck size={12} strokeWidth={2.5} /> Chainlink
           </a>

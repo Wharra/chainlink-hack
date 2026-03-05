@@ -375,45 +375,75 @@ def call_antigravity_score(code, chain_name, balance_usd, scan_result=None):
         if since_last < AI_MIN_INTERVAL_SECONDS:
             time.sleep(AI_MIN_INTERVAL_SECONDS - since_last)
 
-        # Retry loop for 429 (Rate Limit)
-        max_retries = 1 # Keep requests low to avoid rate limits
+        # Try each available key before giving up
+        keys_to_try = list(utils.GOOGLE_API_KEYS)
+        random.shuffle(keys_to_try)
+        response = None
         
-        for attempt in range(max_retries):
-            # ROTATE KEY: Pick a random key for each attempt
-            current_key = random.choice(utils.GOOGLE_API_KEYS)
-            masked_key = f"{current_key[:4]}...{current_key[-4:]}"
+        for idx, current_key in enumerate(keys_to_try):
+            # Using gemini-2.0-flash — good quotas and available on v1beta
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={current_key}"
             
-            # Using gemini-2.5-flash to avoid rate limits and 404s
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={current_key}"
+            print(f"[AI] Attempt {idx+1}/{len(keys_to_try)}")
             
-            print(f"[AI] Attempt {attempt+1}/{max_retries}")
-            
-            response = requests.post(url, headers=headers, json=payload)
-            _last_ai_call_ts = time.time()
+            try:
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                _last_ai_call_ts = time.time()
+            except requests.exceptions.Timeout:
+                print(f"[WARN] Request timeout. Trying next key...")
+                continue
             
             if response.status_code == 200:
                 break
             elif response.status_code == 429:
-                wait_time = 2 # Short wait since we are switching keys
-                print(f"[WARN] Rate Limit (429). Switching key in {wait_time}s...")
-                time.sleep(wait_time)
+                print(f"[WARN] Rate Limit (429) on key {idx+1}. Trying next key...")
+                time.sleep(2)
             else:
-                print(f"[ERROR] API Error {response.status_code}: {response.text}")
-                # Don't break immediately on generic errors if we have multiple keys, strictly speaking
-                # but usually 400/403 won't proceed. Let's return error for non-429.
-                return fallback_score, fallback_vuln
+                print(f"[ERROR] API Error {response.status_code}: {response.text[:100]}")
+                break
         else:
              print("[ERROR] Failed after retries (All keys/attempts exhausted). Using Regex Fallback.")
-             return fallback_score, fallback_vuln
-            
-        data = response.json()
-        text = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
-            .strip()
-        )
+             # Continue to fallback instead of returning immediately
+        
+        # Check if we got a valid response, else try Anthropic fallback
+        if response is None or response.status_code != 200:
+            anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+            if anthropic_key:
+                print("[ANTIGRAVITY] Google API exhausted. Switching to Anthropic Claude 3.5 Sonnet...")
+                url = "https://api.anthropic.com/v1/messages"
+                headers_anthropic = {
+                    "x-api-key": anthropic_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json"
+                }
+                payload_anthropic = {
+                    "model": "claude-3-5-sonnet-20241022",
+                    "max_tokens": 1024,
+                    "messages": [{"role": "user", "content": prompt}]
+                }
+                
+                try:
+                    response_anthropic = requests.post(url, headers=headers_anthropic, json=payload_anthropic, timeout=60)
+                    if response_anthropic.status_code == 200:
+                        text = response_anthropic.json().get("content", [{}])[0].get("text", "").strip()
+                        # Force jump to parsing section
+                    else:
+                        print(f"[ANTIGRAVITY] Anthropic API error {response_anthropic.status_code}: {response_anthropic.text[:150]}")
+                        return fallback_score, fallback_vuln
+                except Exception as e:
+                    print(f"[ANTIGRAVITY] Anthropic request failed: {e}")
+                    return fallback_score, fallback_vuln
+            else:
+                return fallback_score, fallback_vuln
+        else:
+            data = response.json()
+            text = (
+                data.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+                .strip()
+            )
         if not text:
             print("[WARN] AI returned empty response.")
             return fallback_score, fallback_vuln

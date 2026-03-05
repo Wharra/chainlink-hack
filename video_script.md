@@ -18,11 +18,11 @@
 
 ## [0:40 - 1:20] Enter ChainGuard: Real-Time Risk Sentinel
 **Audio (Speaker):**
-"For the Chainlink Hackathon's Risk and Compliance track, we built ChainGuard: a real-time risk sentinel. ChainGuard monitors Ethereum, identifies malicious contracts using AI, and posts immutable risk reports on-chain. We solve the 'speed vs intelligence' dilemma by combining deterministic static analysis with the reasoning capabilities of Google Gemini — allowing us to spot novel attack vectors that standard rule-based scanners completely miss."
+"For the Chainlink Hackathon's Risk and Compliance track, we built ChainGuard: a real-time risk sentinel. ChainGuard monitors Ethereum, identifies malicious contracts using AI, and posts immutable risk reports on-chain. We solve the 'speed vs intelligence' dilemma by combining deterministic Static Analysis with an autonomous Gemini 2.0 Flash agent. Our static regex scanner provides a fast, deterministic Yes/No for known patterns, while Gemini provides a 0-100 risk score and catches novel vectors. We then prove it mathematically using Foundry."
 
 **Video (What to display):**
 - **0:40-1:00:** Display the ChainGuard logo/title slide.
-- **1:00-1:20:** Show a split-screen or animated comparison: On the left, "Traditional Scanners" (missing a hidden anomaly). On the right, "ChainGuard" (Static Analysis + AI) catching the hidden threat and scoring it `92/100`.
+- **1:00-1:20:** Show a split-screen: On the left, "Static Analysis" (deterministic Yes/No regex). On the right, "Gemini Flash AI" (Intelligent 0-100 Scoring). Then the two merge to form the final verdict.
 
 ---
 
@@ -31,16 +31,16 @@
 "Here is how it works under the hood.
 First, our EVM Sentry listens to the blockchain for new Uniswap V3 and V4 pool deployments in real time.
 Second, the Golden Bridge fetches the contract's USD value via Chainlink Price Feeds, filtering out zero-value noise and prioritizing high-value targets.
-Third, the contract source is analyzed statically — 16 deterministic patterns across HIGH, MEDIUM, and LOW severity — then those findings are fed directly into Google Gemini, which reasons over the code and assigns a risk score from 0 to 100.
-When a contract scores 70 or above, ChainGuard automatically writes an immutable risk report to our RiskRegistry smart contract on Sepolia — no human intervention required."
+Third, we merge determinism with intelligence. The contract is first analyzed by our Static Scanner, which uses regex rules to provide a hard Yes/No on known attack surfaces. Those deterministic findings are fed into Google Gemini 2.0 Flash, which reasons over the code and outputs an intelligent risk score from 0 to 100.
+If a contract is flagged, our autonomous agent generates a Foundry Exploit to mathematically confirm the vulnerability, and automatically writes an immutable risk report to our RiskRegistry on Sepolia.
 
 **Video (What to display):**
-- **1:20-2:00:** High-quality visual of the Architecture Diagram from the README. Highlight each component as you talk about it:
+- **1:20-2:00:** High-quality visual of the Architecture Flow. Highlight components:
   1. Mainnet EVM Sentry (Uniswap V3/V4 events)
-  2. Golden Bridge (Chainlink Price Feeds)
-  3. Static Scan + Gemini AI scoring
-  4. Auto on-chain submission → Sepolia RiskRegistry
-  5. Antigravity IDE for Foundry Proof of Concepts
+  2. Golden Bridge (Chainlink Price Feeds filtering)
+  3. Static Analysis (Yes/No Flags) + Gemini 2.0 AI (0-100 Score)
+  4. Foundry Exploit Generation & Mainnet Fork Validation
+  5. Auto on-chain submission → Sepolia RiskRegistry
 - Briefly show a snippet of `utils.py` (Price Feeds integration).
 
 ---
@@ -62,16 +62,16 @@ Here on the dashboard we can see contracts being analyzed in real time. Watch th
 
 ## [3:00 - 4:00] Live Demo: Mathematical Proof via Antigravity IDE
 **Audio (Speaker):**
-"But how do we know the AI's vulnerability hypothesis is actually correct? We prove it mathematically.
-When a contract scores 70 or above, ChainGuard automatically queues a Proof of Concept request in `poc_requests/`.
-We then open the project in our AI coding environment — Antigravity — and type a single slash command: `/generate_pocs`.
-The agent reads the high-risk request, fetches the verified source from Etherscan, spawns a Foundry environment against a mainnet fork, and writes a real Solidity exploit.
-Watch as it compiles the exploit, runs the test, and mathematically validates that the funds can indeed be drained — green: PASS."
+"But how do we know the AI's vulnerability hypothesis isn't a hallucination? We prove it mathematically.
+When a contract scores 70 or above, ChainGuard queues a Proof of Concept request.
+Our autonomous Antigravity agent, powered by Gemini 2.0 Flash, takes over. We trigger it with a single command: `/generate_pocs`.
+The agent reads the high-risk contract, spawns a Foundry environment against a live mainnet fork, and writes a real Solidity exploit test. If it fails, the agent iterates and fixes its own code. 
+Watch as it mathematically validates that the funds can indeed be drained — zero false positives."
 
 **Video (What to display):**
 - **3:00-3:15:** Show `poc_requests/` directory containing a queued `.md` file for the flagged contract.
-- **3:15-3:30:** Open Antigravity IDE with the project loaded, type `/generate_pocs` in the agent chat.
-- **3:30-3:50:** Fast-forward the agent autonomously fetching source, writing `Exploit.t.sol` in `poc_requests/done/`.
+- **3:15-3:30:** Open Antigravity with the project loaded, type `/generate_pocs` in the agent chat.
+- **3:30-3:50:** Fast-forward the Gemini 2.0 Flash agent autonomously fetching source, writing and fixing `Exploit.t.sol` in `poc_requests/done/`.
 - **3:50-4:00:** Show the final terminal output of `forge test`: `[PASS] testExploit()` in green, with gas used and assertions passed. Reference the real The DAO result: reentrancy depth 10, 54.18 gwei extracted, 3/3 assertions passed.
 
 ---

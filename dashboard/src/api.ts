@@ -20,6 +20,12 @@ export async function fetchStatus(): Promise<PipelineStatus> {
   return r.json()
 }
 
+export async function fetchAgentStatus(address: string): Promise<{ status: 'pending' | 'completed', output?: string }> {
+  const r = await fetch(`${BASE}/poc_status?address=${encodeURIComponent(address)}`)
+  if (!r.ok) throw new Error('Failed to fetch agent status')
+  return r.json()
+}
+
 /**
  * Streams live Antigravity output via SSE.
  * Returns a cancel function to stop the stream.

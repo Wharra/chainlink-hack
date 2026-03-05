@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Check, X, AlertTriangle, Zap, Link, Download } from 'lucide-react'
-import { runAnalysis, submitOnchain } from '../api'
+import { Check, X, AlertTriangle, Zap, Link, Download, ShieldCheck, ExternalLink } from 'lucide-react'
+import { runAnalysis, submitOnchain, fetchAgentStatus } from '../api'
 import type { OnchainResult } from '../api'
 import type { AnalyzeResult } from '../types'
 
@@ -26,6 +26,7 @@ export default function AnalyzePanel() {
   const [result, setResult] = useState<AnalyzeResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lines, setLines] = useState<string[]>([])
+  const [waitingForAgent, setWaitingForAgent] = useState(false)
 
   // On-chain submission state
   const [submitting, setSubmitting] = useState(false)
@@ -54,22 +55,48 @@ export default function AnalyzePanel() {
 
   const handleResult = async (res: AnalyzeResult) => {
     setResult(res)
-    // Auto-submit on-chain if score >= 70
+    // Setup waiting state if score >= 70, do NOT submit on-chain yet!
     if (res.score >= 70) {
-      setSubmitting(true)
-      setOnchain(null)
-      setOnchainError(null)
-      try {
-        const r = await submitOnchain(res.address, res.score, res.vulnerability)
-        setOnchain(r)
-        setPopupVisible(true)
-      } catch (e) {
-        setOnchainError(e instanceof Error ? e.message : 'Submission failed')
-      } finally {
-        setSubmitting(false)
-      }
+      setWaitingForAgent(true)
     }
   }
+
+  // Poll for agent completion
+  useEffect(() => {
+    let timer: number
+    const poll = async () => {
+      if (!waitingForAgent || !result) return
+      try {
+        const st = await fetchAgentStatus(result.address)
+        if (st.status === 'completed') {
+          setWaitingForAgent(false)
+          setResult(prev => prev ? { ...prev, exploit_confirmed: true, exploit_output: st.output } : null)
+
+          // Now officially auto-submit on-chain
+          setSubmitting(true)
+          setOnchain(null)
+          setOnchainError(null)
+          try {
+            const r = await submitOnchain(result.address, result.score, result.vulnerability)
+            setOnchain(r)
+            setPopupVisible(true)
+          } catch (e) {
+            setOnchainError(e instanceof Error ? e.message : 'Submission failed')
+          } finally {
+            setSubmitting(false)
+          }
+        } else {
+          timer = window.setTimeout(poll, 3000)
+        }
+      } catch (e) {
+        timer = window.setTimeout(poll, 3000)
+      }
+    }
+
+    if (waitingForAgent) poll()
+    return () => clearTimeout(timer)
+  }, [waitingForAgent, result, address])
+
 
   const startScan = (addr: string) => {
     if (cancelRef.current) cancelRef.current()
@@ -77,7 +104,8 @@ export default function AnalyzePanel() {
     setLoading(true)
     setResult(null)
     setError(null)
-    setLines([`$ antigravity --address ${addr} --exploit --json`, ''])
+    setLines([`$ antigravity --address ${addr} --json`, ''])
+    setWaitingForAgent(false)
     setOnchain(null)
     setOnchainError(null)
     setPopupVisible(false)
@@ -179,23 +207,39 @@ export default function AnalyzePanel() {
                     <div className="result-icon" style={{ background: `${c}10`, color: c }}>
                       {result.score >= 70 ? <AlertTriangle size={18} /> : <Check size={18} strokeWidth={3} />}
                     </div>
-                    {result.exploit_confirmed && (
+                    {result.exploit_confirmed && !waitingForAgent && (
                       <span className="badge-exploit" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <Zap size={10} /> EXPLOITABLE
                       </span>
                     )}
-                    {onchain && (
+                    {onchain && !waitingForAgent && (
                       <span className="badge-onchain" onClick={() => setPopupVisible(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <Link size={10} /> ON-CHAIN
                       </span>
                     )}
-                    {result.score >= 70 && (
-                      <a href="http://127.0.0.1:8001/api/report/pdf" download="Walkthrough_TheDAO.pdf" className="badge-pdf" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', background: '#3b82f615', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>
+                    {result.score >= 70 && !waitingForAgent && (
+                      <a href="/api/report/pdf" download="ChainGuard_Report.pdf" className="badge-pdf" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', background: '#3b82f615', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>
                         <Download size={10} /> DOWNLOAD PDF
                       </a>
                     )}
                   </div>
                 </div>
+
+                {waitingForAgent && (
+                  <div className="agent-warning-box" style={{ margin: '12px 16px', background: 'var(--orange-dim)', border: '1px solid var(--orange)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--orange)', fontWeight: 600 }}>
+                      <AlertTriangle size={16} />
+                      HIGH RISK DETECTED: AGENT ACTION REQUIRED
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-2)' }}>
+                      The PoC request has been queued. Please type <code style={{ color: 'var(--text-1)', background: 'rgba(0,0,0,0.2)', padding: '2px 4px', borderRadius: '4px' }}>/generate_pocs</code> in your Antigravity IDE Chat to launch the Exploit Generator.
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--orange)', marginTop: '4px' }}>
+                      <div className="spinner" style={{ width: 10, height: 10, borderColor: 'var(--orange)', borderRightColor: 'transparent' }} />
+                      Waiting for agent to complete exploit...
+                    </div>
+                  </div>
+                )}
 
                 <div className="result-fields">
                   <Row label="Vuln" value={result.vulnerability} vc={result.score >= 70 ? c : undefined} />
@@ -233,50 +277,23 @@ function OnchainPopup({ result, onchain, onClose }: {
   const short = (s: string) => `${s.slice(0, 8)}…${s.slice(-6)}`
 
   return (
-    <div className="popup-overlay" onClick={onClose}>
-      <div className="popup-card" onClick={e => e.stopPropagation()}>
-        <div className="popup-header">
-          <div className="popup-chain-dot" />
-          <span>ALERT RECORDED ON CHAIN</span>
-          <button className="popup-close" onClick={onClose} aria-label="Close" style={{ display: 'flex' }}>
-            <X size={14} />
-          </button>
+    <div className="onchain-toast">
+      <div className="onchain-toast-icon">
+        <ShieldCheck size={18} strokeWidth={2.5} />
+      </div>
+      <div className="onchain-toast-content">
+        <div className="onchain-toast-title">Alert recorded on-chain</div>
+        <div className="onchain-toast-meta">
+          Tx: {short(onchain.tx_hash)} <span className="onchain-toast-dot">·</span> Score: <span style={{ color: c, fontWeight: 700 }}>{result.score}</span>
         </div>
-
-        <div className="popup-network">
-          <img src="/img/chainlink.png" alt="Chainlink" style={{ width: 16, height: 16, objectFit: 'contain' }} onError={e => (e.currentTarget.style.display = 'none')} />
-          Sepolia Testnet via Chainlink CRE
-        </div>
-
-        <div className="popup-fields">
-          <div className="popup-row">
-            <span className="popup-label">Contract</span>
-            <span className="popup-value mono">{short(result.address)}</span>
-          </div>
-          <div className="popup-row">
-            <span className="popup-label">Score</span>
-            <span className="popup-value" style={{ color: c, fontWeight: 600 }}>
-              {result.score}/100 {scoreLabel(result.score)}
-            </span>
-          </div>
-          <div className="popup-row">
-            <span className="popup-label">Registry</span>
-            <span className="popup-value mono">{short(onchain.registry)}</span>
-          </div>
-          <div className="popup-row">
-            <span className="popup-label">Tx</span>
-            <span className="popup-value mono">{short(onchain.tx_hash)}</span>
-          </div>
-        </div>
-
-        <a
-          href={onchain.etherscan_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="popup-etherscan-btn"
-        >
-          View on Etherscan →
+      </div>
+      <div className="onchain-toast-actions">
+        <a href={onchain.etherscan_url} target="_blank" rel="noopener noreferrer" className="onchain-toast-link">
+          View Etherscan <ExternalLink size={12} />
         </a>
+        <button onClick={onClose} className="onchain-toast-close" aria-label="Close">
+          <X size={14} />
+        </button>
       </div>
     </div>
   )

@@ -28,47 +28,46 @@ Ethereum mainnet
     Filters out zero-value contracts. Enriches context for scoring.
       │
       ▼
-[3] Static Scan          static_scan.py
-    Deterministic regex pass over the Solidity source (<10 ms).
-    16 patterns across HIGH / MEDIUM / LOW severity.
-    Optional Slither integration for deeper AST-level checks.
-    Findings are injected into the AI prompt as structured context.
+[3] Static Scanner       static_scan.py
+    Deterministic regex pass over the Solidity source.
+    Fast execution providing strict Yes/No flags for known patterns.
       │
       ▼
-[4] Antigravity          risk_score.py
-    Google Gemini Flash with a hardened security prompt.
-    Reasons over code + static findings to detect both known patterns
-    and novel, unnamed attack vectors no rule-based tool has seen.
-    Returns: risk score 0–100 + vulnerability classification.
+[4] Antigravity Agent    risk_score.py
+    Google Gemini 2.0 Flash with a hardened security prompt.
+    Takes the code + exact deterministic regex flags and reasons over them.
+    Returns: continuous Risk Score 0–100 + vulnerability classification.
       │
       ▼
-[5] Risk API             risk_api.py
-    Flask HTTP server (port 8000). Called by the Chainlink CRE workflow.
-    Exposes /score and /health endpoints.
+[5] Exploit Generation   exploit_runner.py / generate_pocs.md
+    If score >= 70, the Antigravity Agent writes a custom Foundry PoC.
+    The exploit is tested against a live mainnet fork. If it passes,
+    the vulnerability is strictly confirmed with zero false positives.
       │
       ▼
 [6] Chainlink CRE        cre/chainguard-risk/workflow.yaml
-    Off-chain compute workflow that orchestrates the full pipeline.
-    Writes the risk report to RiskRegistry.sol on Sepolia.
-    Emits RiskReported(address, score, vulnerability, timestamp).
+    Off-chain compute workflow that orchestrates the final submission.
+    Writes the confirmed risk report to RiskRegistry.sol on Sepolia.
       │
       ▼
 [7] Dashboard            dashboard/
     React + Vite monitoring UI (port 5173).
-    Live Antigravity terminal via SSE. Auto-submits high-risk contracts
-    on-chain and displays the Etherscan tx in a popup.
+    Live tracking of EVM events, AI scoring, and Exploit Agent status.
 ```
 
 
 ## Why This Architecture Wins
 
-**Determinism + intelligence, not a choice between them.**
+**Determinism + intelligence, paired with mathematical proof.**
 
-Static analysis (Slither) is fully deterministic — the same contract always produces the same findings. That guarantees reproducibility, auditability, and a hard baseline that judges and auditors can verify.
+AI models are incredibly good at finding weird, complex vulnerabilities in smart contracts, but they hallucinate. Static analysis tools don't hallucinate (a regex match is a mathematical certainty), but they are rigid and only output binary Yes/No flags on known issues.
 
-Gemini is the opposite: it reasons, infers, and generalizes — catching novel, unnamed attack vectors that no rule-based tool has ever classified. The static findings are fed into its prompt, grounding its reasoning in concrete evidence.
+ChainGuard combines both:
+1. **Static Analysis** provides the deterministic baseline (Yes/No flags).
+2. **Gemini 2.0 Flash** provides intelligent reasoning, merging the deterministic flags with its own contextual reading to output a continuous **Risk Score (0-100)**.
+3. **Foundry Exploit Generation**: When Gemini flags a high risk, the Antigravity Agent is tasked to write a Foundry `.t.sol` test against a mainnet fork. If the exploit passes, the funds can mathematically be drained.
 
-Two layers. Neither alone is sufficient.
+This guarantees reproducibility, auditability, and a hard baseline with zero false positives.
 
 
 ## Chainlink Integration

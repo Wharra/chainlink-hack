@@ -21,6 +21,7 @@ For EVERY `.md` file in `/Users/armand/chainlink-hack/poc_requests/`:
    - If the test fails, iteratively fix the exploit using `Edit` and re-run until it passes.
 5. **Report & Cleanup:**
    - Once successful, summarize the exploit mechanics in the chat.
+   - Save the raw stdout from the successful `forge test` to a file at: `/Users/armand/chainlink-hack/poc_requests/done/<target_contract_address>_output.txt`
    - Move the request file from `poc_requests/` to `/Users/armand/chainlink-hack/poc_requests/done/` to mark it as complete.
 
 6. **Continuous Polling Mode:**
