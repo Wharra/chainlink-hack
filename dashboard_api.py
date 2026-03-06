@@ -219,7 +219,7 @@ def get_stats():
         
         threats = sum(
             1 for r in uniq_rows
-            if r.get("vulnerability", "").lower().strip() not in SAFE_VULNS
+            if (r.get("score") or 0) >= 85 or r.get("status") == "THREAT"
         )
         value_protected = sum(r.get("value_usd", 0.0) for r in uniq_rows)
         return jsonify({
@@ -409,12 +409,16 @@ def run_scan():
 @app.route("/api/poc_status")
 def poc_status():
     address = flask_request.args.get("address", "").strip().lower()
+    since = flask_request.args.get("since", type=float, default=0)
     if not address:
         return jsonify({"status": "pending"})
-    
+
     done_path = os.path.join(POC_REQUESTS_DIR, "done", f"{address}_output.txt")
     if os.path.exists(done_path):
         try:
+            # Only count as completed if the file was written after this scan started
+            if since and os.path.getmtime(done_path) < since:
+                return jsonify({"status": "pending"})
             with open(done_path, "r") as f:
                 output = f.read()
             return jsonify({

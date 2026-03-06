@@ -27,7 +27,7 @@ export default function StatsBar({ stats }: Props) {
   ]
 
   return (
-    <div className="stats-grid animate-scale-in">
+    <div className="stats-grid">
       {cards.map((card) => (
         <div key={card.label} className="stat-card">
           {stats === null ? (

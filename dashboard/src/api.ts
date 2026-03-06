@@ -20,8 +20,10 @@ export async function fetchStatus(): Promise<PipelineStatus> {
   return r.json()
 }
 
-export async function fetchAgentStatus(address: string): Promise<{ status: 'pending' | 'completed', output?: string }> {
-  const r = await fetch(`${BASE}/poc_status?address=${encodeURIComponent(address)}`)
+export async function fetchAgentStatus(address: string, since?: number): Promise<{ status: 'pending' | 'completed', output?: string }> {
+  const params = new URLSearchParams({ address })
+  if (since) params.set('since', String(since))
+  const r = await fetch(`${BASE}/poc_status?${params}`)
   if (!r.ok) throw new Error('Failed to fetch agent status')
   return r.json()
 }

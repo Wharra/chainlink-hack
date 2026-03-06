@@ -19,7 +19,7 @@ function vulnBadge(vuln: string): Badge {
   if (v.includes('drain')) return { label: 'Fund Drain', cls: 'badge-red' }
   if (v.includes('mint')) return { label: 'Unltd. Mint', cls: 'badge-amber' }
   if (v.includes('access') || v.includes('control')) return { label: 'Access Ctrl', cls: 'badge-amber' }
-  if (v.includes('tax') || v.includes('fee')) return { label: 'Hidden Tax', cls: 'badge-purple' }
+  if (v.includes('tax') || v.includes('fee')) return { label: 'Hidden Tax', cls: 'badge-blue' }
   if (v.includes('no significant') || v.includes('safe') || v === 'none')
     return { label: 'Clean', cls: 'badge-green' }
   return { label: vuln.slice(0, 22), cls: 'badge-amber' }

@@ -19,7 +19,7 @@ function vulnBadge(vuln: string): Badge {
   if (v.includes('drain')) return { label: 'Fund Drain', cls: 'badge-red' }
   if (v.includes('mint')) return { label: 'Unltd. Mint', cls: 'badge-amber' }
   if (v.includes('access') || v.includes('control')) return { label: 'Access Ctrl', cls: 'badge-amber' }
-  if (v.includes('tax') || v.includes('fee')) return { label: 'Hidden Tax', cls: 'badge-purple' }
+  if (v.includes('tax') || v.includes('fee')) return { label: 'Hidden Tax', cls: 'badge-blue' }
   if (v.includes('no significant') || v.includes('safe') || v === 'none')
     return { label: 'Clean', cls: 'badge-green' }
   return { label: vuln.slice(0, 22), cls: 'badge-amber' }
@@ -54,7 +54,7 @@ export default function AlertsTable({ alerts, loading }: Props) {
       : alerts
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="card card-flex">
       {/* Header */}
       <div className="card-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -88,7 +88,7 @@ export default function AlertsTable({ alerts, loading }: Props) {
           </div>
           <div className="sync-indicator">
             <div className={`sync-dot ${loading ? 'syncing' : 'online'}`} />
-            <span className="sync-label">{loading ? 'SYNCING' : '5s REFRESH'}</span>
+            <span className="sync-label">{loading ? 'SYNCING' : '5s refresh'}</span>
           </div>
         </div>
       </div>

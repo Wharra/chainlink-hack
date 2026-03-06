@@ -36,4 +36,4 @@ For EVERY `.md` file in `/Users/armand/chainlink-hack/poc_requests/`:
 - PoC requests dir: `/Users/armand/chainlink-hack/poc_requests/`
 - Done dir: `/Users/armand/chainlink-hack/poc_requests/done/`
 - Antigravity CLI: `python /Users/armand/chainlink-hack/risk_score.py --address <addr> --exploit --json`
-- Fork RPC: use `ALCHEMY_API_KEY` from `.env` → `https://eth-mainnet.g.alchemy.com/v2/<key>`
+- Fork RPC: already included in each `.md` request file under `**Fork URL:**` — read it directly from there, do not access `.env`

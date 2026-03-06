@@ -339,9 +339,15 @@ def call_antigravity_score(code, chain_name, balance_usd, scan_result=None):
     fallback_vuln = "Rate Limited (Regex Fallback)"
     if scan_result and scan_result.get('findings'):
         fallback_vuln = f"Regex: {scan_result['findings'][0]['name']}"
+
+    # If static scan already found HIGH findings, use regex result directly — no AI needed
+    if scan_result and scan_result.get('high'):
+        print(f"[AI] Regex found {len(scan_result['high'])} HIGH finding(s) — using static result.")
+        return fallback_score, fallback_vuln
+
     # Rotate keys randomly to distribute load
     if not utils.GOOGLE_API_KEYS:
-        print("[ERROR] No Google API Keys found!")
+        print("[SCAN] No Google API Keys — using static analysis result.")
         return fallback_score, fallback_vuln
 
     headers = {'Content-Type': 'application/json'}

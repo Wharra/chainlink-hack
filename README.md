@@ -1,6 +1,6 @@
 # ChainGuard
 
-**Real-time DeFi risk sentinel — Chainlink Hackathon 2025, Risk & Compliance Track**
+**Real-time DeFi risk sentinel — Chainlink Hackathon 2026, Risk & Compliance Track**
 
 ChainGuard monitors Uniswap V3/V4 deployments on Ethereum, identifies malicious contracts before users interact with them, and posts immutable risk reports on-chain through Chainlink CRE.
 
@@ -30,12 +30,12 @@ Ethereum mainnet
       ▼
 [3] Static Scanner       static_scan.py
     Deterministic regex pass over the Solidity source.
-    Fast execution providing strict Yes/No flags for known patterns.
+    If a HIGH finding is detected, the verdict is immediate — no AI call made.
       │
       ▼
 [4] Antigravity Agent    risk_score.py
-    Google Gemini 2.0 Flash with a hardened security prompt.
-    Takes the code + exact deterministic regex flags and reasons over them.
+    Second layer — only triggered if regex found nothing critical.
+    Google Gemini 2.0 Flash reasons over the source code and static flags.
     Returns: continuous Risk Score 0–100 + vulnerability classification.
       │
       ▼
@@ -63,9 +63,9 @@ Ethereum mainnet
 AI models are incredibly good at finding weird, complex vulnerabilities in smart contracts, but they hallucinate. Static analysis tools don't hallucinate (a regex match is a mathematical certainty), but they are rigid and only output binary Yes/No flags on known issues.
 
 ChainGuard combines both:
-1. **Static Analysis** provides the deterministic baseline (Yes/No flags).
-2. **Gemini 2.0 Flash** provides intelligent reasoning, merging the deterministic flags with its own contextual reading to output a continuous **Risk Score (0-100)**.
-3. **Foundry Exploit Generation**: When Gemini flags a high risk, the Antigravity Agent is tasked to write a Foundry `.t.sol` test against a mainnet fork. If the exploit passes, the funds can mathematically be drained.
+1. **Static Analysis** runs first and is deterministic. A HIGH regex match instantly sets the verdict — no AI call is made.
+2. **Gemini 2.0 Flash** is the second layer, only invoked when regex finds nothing critical. It reasons over the source code and outputs a continuous **Risk Score (0-100)**.
+3. **Foundry Exploit Generation**: When the risk is confirmed (score ≥ 70 or HIGH regex hit), the Antigravity Agent writes a Foundry `.t.sol` test against a mainnet fork. If the exploit passes, the vulnerability is mathematically proven.
 
 This guarantees reproducibility, auditability, and a hard baseline with zero false positives.
 
@@ -123,10 +123,10 @@ python risk_score.py --address 0xYourContract --exploit --json
 ## On-Chain Flow (Dashboard)
 
 When a contract scores ≥ 70/100:
-1. Dashboard auto-calls `/api/submit` → signs tx with your Sepolia wallet
-2. `RiskRegistry.reportRisk(address, score, vulnerability)` is written on-chain
-3. Popup shows the tx hash + Etherscan link
-4. A PoC request is queued in `poc_requests/` for Antigravity to process
+1. A PoC request is queued in `poc_requests/` for the Antigravity agent to process
+2. Once the agent confirms the exploit, the dashboard calls `/api/submit` → signs tx with your Sepolia wallet
+3. `RiskRegistry.reportRisk(address, score, vulnerability)` is written on-chain
+4. Popup shows the tx hash + Etherscan link
 
 ## PoC Generation (Antigravity IDE)
 
