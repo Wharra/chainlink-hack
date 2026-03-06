@@ -37,6 +37,8 @@ logs/
 gold_processed/
 candidates/
 waiting_room/
+poc_requests/
+poc_results/
 
 # Dashboard build
 dashboard/dist/

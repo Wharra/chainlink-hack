@@ -91,7 +91,7 @@ export default function AboutPage() {
             <div className="ab2-pipe-pre">How it works</div>
             <h2 className="ab2-pipe-title">
               7 stages.{' '}
-              <span className="ab2-pipe-thin">1 manual step.</span>
+              <span className="ab2-pipe-thin">1 manual steps.</span>
             </h2>
           </div>
 
@@ -143,10 +143,10 @@ const STACK = [
   { name: 'Golden Bridge', icon: 'GB', desc: 'Fetches contract source from Etherscan and checks pool value via Chainlink price feeds' },
   { name: 'Static Analysis', icon: 'SCN', desc: 'Deterministic regex rules run first. A HIGH finding instantly sets the verdict with no AI needed.' },
   { name: 'Gemini 2.0 AI', icon: 'AI', desc: 'Second layer: if regex finds nothing critical, Gemini 2.0 Flash reasons over the source code to assign a Risk Score from 0 to 100.' },
-  { name: 'Antigravity', icon: 'AG', desc: 'Autonomous agent that writes Foundry exploits to mathematically prove the vulnerability exists' },
+  { name: 'Batch Runner', icon: 'BR', desc: 'Tier-1 exploit engine: adapts a proven Foundry template for the detected vulnerability type and confirms it against a mainnet fork automatically.' },
+  { name: 'Antigravity', icon: 'AG', desc: 'Tier-2 agent for novel vectors: writes a custom Foundry exploit from scratch, iterates until it passes, then saves the result as a reusable template.' },
   { name: 'Chainlink CRE', icon: 'CRE', desc: 'Securely records the confirmed risk verdicts on-chain to RiskRegistry.sol on Sepolia' },
   { name: 'Risk API', icon: 'API', desc: 'HTTP server that the CRE workflow and this dashboard use to score contracts' },
-  { name: 'Dashboard', icon: 'UI', desc: 'Live monitoring interface built with React and TypeScript' },
 ]
 
 const STEPS = [
@@ -154,7 +154,7 @@ const STEPS = [
   { name: 'Golden Bridge', desc: 'Downloads the verified source from Etherscan and checks the pool value using the Chainlink ETH/USD price feed. Low value contracts get skipped.' },
   { name: 'Static Analysis', desc: 'A deterministic regex engine runs first. It flags known attack surfaces like uncapped mints or hidden delegatecalls. If a HIGH finding is detected, the verdict is immediate with no AI call made.' },
   { name: 'Gemini Risk Scoring', desc: 'Second layer, only if regex found nothing critical. The contract source and static flags pass to Gemini 2.0 Flash, which reasons through the code and outputs a continuous Risk Score from 0 to 100.' },
-  { name: 'Exploit Generation', desc: 'If the score reaches 70 or above, our Antigravity Agent takes over. It spawns a Foundry testing environment and autonomously writes a PoC to attack a live mainnet fork.' },
+  { name: 'Exploit Generation', desc: 'If the score reaches 70 or above, the two-tier exploit engine fires. The Batch Runner first tries to adapt a proven template for the flagged vulnerability type. For novel vectors with no existing template, the Antigravity Agent writes a custom Foundry PoC from scratch and saves it as a new template for future runs.' },
   { name: 'Mainnet Fork Validation', desc: 'The generated Foundry PoC is executed against a live mainnet fork. If the test passes, the vulnerability is strictly confirmed with zero false positives.' },
   { name: 'Chainlink CRE', desc: 'A TypeScript workflow running on the Chainlink Compute Runtime. When a contract scores 70 or above it records the finding in RiskRegistry.sol on Sepolia where it stays permanently.' },
 ]

@@ -24,6 +24,7 @@ stop_pid "risk_api"
 stop_pid "dashboard_api"
 stop_pid "sentry_evm"
 stop_pid "golden_bridge"
+stop_pid "batch_exploit"
 stop_pid "vite"
 
 # Clean up any leftover processes on our ports

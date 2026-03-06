@@ -56,7 +56,12 @@ log "Starting Golden Bridge..."
 nohup python golden_bridge.py > "$LOGS/golden_bridge.log" 2>&1 &
 echo $! > "$LOGS/golden_bridge.pid"
 
-# 5. Wait for APIs to be ready, then start frontend
+# 5. Batch Exploit Runner (polls every 60s for new PoC requests)
+log "Starting Batch Exploit Runner (polling every 60s)..."
+nohup bash -c 'while true; do python batch_exploit.py; sleep 60; done' > "$LOGS/batch_exploit.log" 2>&1 &
+echo $! > "$LOGS/batch_exploit.pid"
+
+# 6. Wait for APIs to be ready, then start frontend
 sleep 2
 
 log "Starting dashboard (Vite dev server)..."
