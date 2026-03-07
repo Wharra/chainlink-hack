@@ -1,10 +1,24 @@
+<div align="center">
+
+<img src="dashboard/public/img/logo-chainguard.png" alt="ChainGuard" width="120" />
+
 # ChainGuard
 
-**Real-time DeFi risk sentinel — Chainlink Hackathon 2026, Risk & Compliance Track**
+**Real-time DeFi risk sentinel**
+
+![Chainlink](https://img.shields.io/badge/Chainlink-CRE%20%2B%20Data%20Feeds-375BD2?style=for-the-badge&logo=chainlink&logoColor=white)
+![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet%20%2B%20Sepolia-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-CRE%20Workflow-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+**Hackathon:** Chainlink Convergence 2026 — **Risk & Compliance Track**
 
 ChainGuard monitors every new Uniswap V3/V4 pool on Ethereum, detects malicious contracts using static analysis + Gemini AI, proves vulnerabilities with Foundry exploits on a mainnet fork, and writes immutable risk reports on-chain via **Chainlink CRE**.
 
-> **RiskRegistry deployed on Sepolia:** [`0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821`](https://sepolia.etherscan.io/address/0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821)
+> 🔴 **RiskRegistry live on Sepolia:** [`0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821`](https://sepolia.etherscan.io/address/0x60A94FFCa6B313117487E7AD1cDAa6d56b41a821)
+
+</div>
 
 ---
 
@@ -121,6 +135,20 @@ bash setup.sh
 ```
 
 Open **http://localhost:5173** — the full pipeline is live.
+
+---
+
+## Antigravity IDE — Novel Exploit Generation
+
+For novel vectors with no existing template:
+1. Install [Antigravity](https://antigravity.dev) and open this repo in it
+2. Then run:
+```
+/generate_pocs
+```
+The agent fetches the contract source, writes a Foundry PoC, iterates until `forge test` passes, and saves the result as a reusable template. Polls every 60s as a long-running daemon.
+
+> Known vulnerability types are handled automatically by the Batch Runner launched via `./start.sh` — no Antigravity needed.
 
 ---
 
