@@ -142,7 +142,7 @@ Open **http://localhost:5173** — the full pipeline is live.
 
 For novel vectors with no existing template:
 1. Install [Antigravity](https://antigravity.dev) and open this repo in it
-2. Then run:
+2. In the Antigravity **chat**, type:
 ```
 /generate_pocs
 ```
