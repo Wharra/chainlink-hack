@@ -88,6 +88,11 @@ fi
 log "Foundry OK — $(forge --version | head -1)"
 
 # ── 6. .env setup ───────────────────────────────────────────
+# ── 7. Make scripts executable ──────────────────────────────
+chmod +x "$SCRIPT_DIR/start.sh" "$SCRIPT_DIR/stop.sh"
+log "Scripts are executable."
+
+# ── 8. .env setup ───────────────────────────────────────────
 if [ ! -f "$SCRIPT_DIR/.env" ]; then
   cp "$SCRIPT_DIR/.env-example" "$SCRIPT_DIR/.env"
   echo ""
